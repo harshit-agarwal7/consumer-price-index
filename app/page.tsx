@@ -310,6 +310,7 @@ export default function Home() {
               <YAxis
                 tick={{ fontSize: 12 }}
                 stroke="#64748b"
+                domain={[100, 'dataMax + 10']}
               />
               <Tooltip
                 contentStyle={{
