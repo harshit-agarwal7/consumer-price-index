@@ -98,6 +98,23 @@ export default function Home() {
     }
   }, [startYear, startMonth, endYear, endMonth]);
 
+  // Helper function to convert month name to number
+  const monthToNumber = (monthName: string): string => {
+    const months: { [key: string]: string } = {
+      'January': '01', 'February': '02', 'March': '03', 'April': '04',
+      'May': '05', 'June': '06', 'July': '07', 'August': '08',
+      'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    };
+    return months[monthName] || '01';
+  };
+
+  // Helper function to format date as MM/YY
+  const formatDate = (year: string, month: string): string => {
+    const monthNum = monthToNumber(month);
+    const yearShort = year.slice(-2); // Get last 2 digits of year
+    return `${monthNum}/${yearShort}`;
+  };
+
   // Transform data for chart
   useEffect(() => {
     if (cpiData.length === 0 || selectedCategories.length === 0) return;
@@ -110,15 +127,16 @@ export default function Home() {
       return selectedSectors.includes(row.Sector) && inDateRange;
     });
 
-    // Group data by Year-Month
+    // Group data by Year-Month with sortable key
     const transformed = filteredData.reduce((acc: any[], row) => {
-      const dateKey = `${row.Year}-${row.Month}`;
+      const sortKey = `${row.Year}-${monthToNumber(row.Month)}`; // For sorting (YYYY-MM)
+      const displayDate = formatDate(row.Year, row.Month); // For display (MM/YY)
 
       // Find if we already have this date
-      let dateEntry = acc.find(item => item.date === dateKey);
+      let dateEntry = acc.find(item => item.sortKey === sortKey);
 
       if (!dateEntry) {
-        dateEntry = { date: dateKey };
+        dateEntry = { date: displayDate, sortKey };
         acc.push(dateEntry);
       }
 
@@ -130,6 +148,9 @@ export default function Home() {
 
       return acc;
     }, []);
+
+    // Sort by the sortKey (YYYY-MM format)
+    transformed.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 
     setChartData(transformed);
   }, [cpiData, selectedCategories, selectedSectors, dateRange]);
