@@ -108,6 +108,13 @@ export default function Home() {
     return months[monthName] || '01';
   };
 
+  // Helper function to compare dates (year-month combinations)
+  const compareDates = (year1: string, month1: string, year2: string, month2: string): number => {
+    const date1 = `${year1}-${monthToNumber(month1)}`;
+    const date2 = `${year2}-${monthToNumber(month2)}`;
+    return date1.localeCompare(date2);
+  };
+
   // Helper function to format date as MM/YY
   const formatDate = (year: string, month: string): string => {
     const monthNum = monthToNumber(month);
@@ -119,11 +126,15 @@ export default function Home() {
   useEffect(() => {
     if (cpiData.length === 0 || selectedCategories.length === 0) return;
 
+    // Convert dateRange to normalized format (YYYY-MM) for comparison
+    const normalizedStart = dateRange.start ? `${dateRange.start.split('-')[0]}-${monthToNumber(dateRange.start.split('-')[1])}` : null;
+    const normalizedEnd = dateRange.end ? `${dateRange.end.split('-')[0]}-${monthToNumber(dateRange.end.split('-')[1])}` : null;
+
     // Filter data by selected sectors and date range
     const filteredData = cpiData.filter(row => {
-      const dateKey = `${row.Year}-${row.Month}`;
-      const inDateRange = (!dateRange.start || dateKey >= dateRange.start) &&
-                          (!dateRange.end || dateKey <= dateRange.end);
+      const dateKey = `${row.Year}-${monthToNumber(row.Month)}`; // Normalized format (YYYY-MM)
+      const inDateRange = (!normalizedStart || dateKey >= normalizedStart) &&
+                          (!normalizedEnd || dateKey <= normalizedEnd);
       return selectedSectors.includes(row.Sector) && inDateRange;
     });
 
@@ -169,6 +180,38 @@ export default function Home() {
         ? prev.filter(s => s !== sector)
         : [...prev, sector]
     );
+  };
+
+  // Check if a start month should be disabled
+  const isStartMonthDisabled = (month: string): boolean => {
+    if (!startYear || !endYear || !endMonth) return false;
+    return compareDates(startYear, month, endYear, endMonth) > 0;
+  };
+
+  // Check if a start year should be disabled
+  const isStartYearDisabled = (year: string): boolean => {
+    if (!endYear) return false;
+    if (!startMonth || !endMonth) {
+      // If months aren't selected, just compare years
+      return year > endYear;
+    }
+    return compareDates(year, startMonth, endYear, endMonth) > 0;
+  };
+
+  // Check if an end month should be disabled
+  const isEndMonthDisabled = (month: string): boolean => {
+    if (!startYear || !endYear || !startMonth) return false;
+    return compareDates(startYear, startMonth, endYear, month) > 0;
+  };
+
+  // Check if an end year should be disabled
+  const isEndYearDisabled = (year: string): boolean => {
+    if (!startYear) return false;
+    if (!startMonth || !endMonth) {
+      // If months aren't selected, just compare years
+      return year < startYear;
+    }
+    return compareDates(startYear, startMonth, year, endMonth) > 0;
   };
 
   return (
@@ -252,7 +295,9 @@ export default function Home() {
                       className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-sm"
                     >
                       {availableMonths.map(month => (
-                        <option key={month} value={month}>{month}</option>
+                        <option key={month} value={month} disabled={isStartMonthDisabled(month)}>
+                          {month}
+                        </option>
                       ))}
                     </select>
                     <select
@@ -261,7 +306,9 @@ export default function Home() {
                       className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-sm"
                     >
                       {availableYears.map(year => (
-                        <option key={year} value={year}>{year}</option>
+                        <option key={year} value={year} disabled={isStartYearDisabled(year)}>
+                          {year}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -277,7 +324,9 @@ export default function Home() {
                       className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-sm"
                     >
                       {availableMonths.map(month => (
-                        <option key={month} value={month}>{month}</option>
+                        <option key={month} value={month} disabled={isEndMonthDisabled(month)}>
+                          {month}
+                        </option>
                       ))}
                     </select>
                     <select
@@ -286,7 +335,9 @@ export default function Home() {
                       className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-sm"
                     >
                       {availableYears.map(year => (
-                        <option key={year} value={year}>{year}</option>
+                        <option key={year} value={year} disabled={isEndYearDisabled(year)}>
+                          {year}
+                        </option>
                       ))}
                     </select>
                   </div>
