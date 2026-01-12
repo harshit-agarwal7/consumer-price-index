@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Home from './page';
 
 // Mock fetch for CSV data
@@ -41,16 +41,12 @@ describe('CPI Index Page', () => {
   });
 
   it('renders the page title', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
     expect(screen.getByText('Consumer Price Index')).toBeInTheDocument();
   });
 
   it('loads and displays data from CSV', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/CPIndex_Jan13-To-Nov25.csv');
@@ -58,9 +54,7 @@ describe('CPI Index Page', () => {
   });
 
   it('displays state selector with ALL India as default', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
@@ -68,18 +62,14 @@ describe('CPI Index Page', () => {
   });
 
   it('opens state dropdown when clicked', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
-    await act(async () => {
-      const stateButton = screen.getByRole('button', { name: /ALL India/i });
-      fireEvent.click(stateButton);
-    });
+    const stateButton = screen.getByRole('button', { name: /ALL India/i });
+    fireEvent.click(stateButton);
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Search states...')).toBeInTheDocument();
@@ -87,29 +77,23 @@ describe('CPI Index Page', () => {
   });
 
   it('filters states based on search input', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
     // Open dropdown
-    await act(async () => {
-      const stateButton = screen.getByRole('button', { name: /ALL India/i });
-      fireEvent.click(stateButton);
-    });
+    const stateButton = screen.getByRole('button', { name: /ALL India/i });
+    fireEvent.click(stateButton);
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Search states...')).toBeInTheDocument();
     });
 
     // Search for Delhi
-    await act(async () => {
-      const searchInput = screen.getByPlaceholderText('Search states...');
-      fireEvent.change(searchInput, { target: { value: 'Delhi' } });
-    });
+    const searchInput = screen.getByPlaceholderText('Search states...');
+    fireEvent.change(searchInput, { target: { value: 'Delhi' } });
 
     await waitFor(() => {
       const buttons = screen.getAllByRole('button');
@@ -119,9 +103,7 @@ describe('CPI Index Page', () => {
   });
 
   it('displays all category options', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('General Index (All Groups)')).toBeInTheDocument();
@@ -135,9 +117,7 @@ describe('CPI Index Page', () => {
   });
 
   it('displays all sector options', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('Rural')).toBeInTheDocument();
@@ -147,9 +127,7 @@ describe('CPI Index Page', () => {
   });
 
   it('has General Index (All Groups) selected by default', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       const checkbox = screen.getAllByRole('checkbox').find(cb =>
@@ -160,9 +138,7 @@ describe('CPI Index Page', () => {
   });
 
   it('toggles category selection when clicked', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('Food and beverages')).toBeInTheDocument();
@@ -174,17 +150,13 @@ describe('CPI Index Page', () => {
 
     expect(foodCheckbox).not.toBeChecked();
 
-    await act(async () => {
-      fireEvent.click(foodCheckbox!);
-    });
+    fireEvent.click(foodCheckbox!);
 
     expect(foodCheckbox).toBeChecked();
   });
 
   it('displays date range selectors', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('From')).toBeInTheDocument();
@@ -193,9 +165,7 @@ describe('CPI Index Page', () => {
   });
 
   it('populates year dropdown from CSV data', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       const yearSelects = screen.getAllByRole('combobox');
@@ -206,9 +176,7 @@ describe('CPI Index Page', () => {
   });
 
   it('shows chart section', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('Price Index Trends')).toBeInTheDocument();
@@ -216,40 +184,32 @@ describe('CPI Index Page', () => {
   });
 
   it('displays footer with data source', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     expect(screen.getByText(/Ministry of Statistics and Programme Implementation/)).toBeInTheDocument();
   });
 
   it('allows selecting a different state', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
     // Open dropdown
-    await act(async () => {
-      const stateButton = screen.getByRole('button', { name: /ALL India/i });
-      fireEvent.click(stateButton);
-    });
+    const stateButton = screen.getByRole('button', { name: /ALL India/i });
+    fireEvent.click(stateButton);
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Search states...')).toBeInTheDocument();
     });
 
     // Select Delhi
-    await act(async () => {
-      const buttons = screen.getAllByRole('button');
-      const delhiButton = buttons.find(btn => btn.textContent === 'Delhi');
-      if (delhiButton) {
-        fireEvent.click(delhiButton);
-      }
-    });
+    const buttons = screen.getAllByRole('button');
+    const delhiButton = buttons.find(btn => btn.textContent === 'Delhi');
+    if (delhiButton) {
+      fireEvent.click(delhiButton);
+    }
 
     // Check that Delhi is now selected
     await waitFor(() => {
@@ -265,9 +225,7 @@ describe('Date Range Validation', () => {
   });
 
   it('disables end years before start year', async () => {
-    await act(async () => {
-      render(<Home />);
-    });
+    render(<Home />);
 
     await waitFor(() => {
       // After data loads, check that end year options before start year are disabled
