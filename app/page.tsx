@@ -30,7 +30,13 @@ interface ChartDefinition {
   endMonth: string;
   endYear: string;
   // Which dimension has multi-select enabled for this chart
-  multiSelectDimension: 'states' | 'categories' | 'sectors';
+  multiSelectDimension: 'states' | 'categories' | 'sectors' | null;
+}
+
+// Toast notification interface
+interface ToastMessage {
+  id: string;
+  message: string;
 }
 
 const SECTOR_COLORS: { [key: string]: string } = {
@@ -82,11 +88,15 @@ export default function Home() {
   const [selectedStates, setSelectedStates] = useState<string[]>(['ALL India']);
   const [states, setStates] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General Index (All Groups)']);
-  const [selectedSectors, setSelectedSectors] = useState<string[]>(['Rural', 'Urban', 'Rural + Urban']);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>(['Rural + Urban']);
 
-  // Track which dimension currently has multi-select enabled
+  // Track which dimension currently has multi-select enabled (inferred from user actions)
   // Only ONE dimension can have multiple selections at a time
-  const [multiSelectDimension, setMultiSelectDimension] = useState<'states' | 'categories' | 'sectors'>('sectors');
+  // null means no dimension is actively comparing (all have single selections)
+  const [multiSelectDimension, setMultiSelectDimension] = useState<'states' | 'categories' | 'sectors' | null>(null);
+
+  // Toast notifications for comparison dimension switches
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const [, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -99,7 +109,6 @@ export default function Home() {
   const [endMonth, setEndMonth] = useState<string>('');
   const [endYear, setEndYear] = useState<string>('');
   const [stateSearch, setStateSearch] = useState<string>('');
-  const [isStateDropdownOpen, setIsStateDropdownOpen] = useState<boolean>(false);
   const [hasNoData, setHasNoData] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
@@ -119,16 +128,6 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target as Node)) {
-        setIsStateDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Load chart board from localStorage on mount
   useEffect(() => {
@@ -356,103 +355,174 @@ export default function Home() {
   }, [cpiData, selectedStates, selectedCategories, selectedSectors, startMonth, startYear, endMonth, endYear, generateChartData]);
 
   /**
-   * SINGLE MULTI-SELECT DIMENSION RULE ENFORCEMENT
+   * IMPLICIT COMPARISON DIMENSION INFERENCE
    *
-   * Only ONE dimension (States, Categories, or Sectors) can have multiple selections at a time.
-   * When a user tries to select multiple items in a dimension:
-   * - If that dimension is already the multi-select dimension, allow it
-   * - If another dimension currently has multiple selections, prevent it and show helper message
-   * - If switching to a new multi-select dimension, restrict others to single selection
+   * The comparison dimension is inferred from user interactions, not explicitly selected.
+   * Core rules:
+   * 1. Only ONE dimension can have multiple selections at a time
+   * 2. The first dimension where user selects a SECOND item becomes the comparison dimension
+   * 3. If user selects a second item in a DIFFERENT dimension:
+   *    - Switch comparison to that new dimension
+   *    - Reduce the previous comparison dimension to single selection (keep first item)
+   *    - Show a toast notification explaining the switch
+   * 4. If user deselects down to single item in comparison dimension:
+   *    - Clear the comparison dimension (set to null)
+   *    - All dimensions revert to single-select behavior
    */
 
-  const toggleState = (state: string) => {
-    setSelectedStates(prev => {
-      const isSelected = prev.includes(state);
+  // Helper to show toast notification
+  const showToast = (message: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message }]);
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
 
-      if (isSelected) {
-        // Deselecting - always allow, but ensure at least one remains
-        const newSelection = prev.filter(s => s !== state);
-        return newSelection.length > 0 ? newSelection : prev;
-      } else {
-        // Selecting a new state
-        if (multiSelectDimension === 'states') {
-          // States is the multi-select dimension, allow multiple
-          return [...prev, state];
-        } else if (prev.length === 0) {
-          // No states selected, allow first selection
-          return [state];
-        } else {
-          // Another dimension has multi-select, replace current selection
-          return [state];
-        }
+  // Get dimension display name
+  const getDimensionDisplayName = (dim: 'states' | 'categories' | 'sectors' | null): string => {
+    if (dim === 'states') return 'State / Region';
+    if (dim === 'categories') return 'Categories';
+    if (dim === 'sectors') return 'Sectors';
+    return '';
+  };
+
+  const toggleState = (state: string) => {
+    const isSelected = selectedStates.includes(state);
+
+    if (isSelected) {
+      // Deselecting
+      const newSelection = selectedStates.filter(s => s !== state);
+      if (newSelection.length === 0) return; // Prevent empty selection
+
+      setSelectedStates(newSelection);
+
+      // If we're down to one item and states was the comparison dimension, clear it
+      if (newSelection.length === 1 && multiSelectDimension === 'states') {
+        setMultiSelectDimension(null);
       }
-    });
+    } else {
+      // Selecting a new state
+      if (selectedStates.length === 0) {
+        // First selection
+        setSelectedStates([state]);
+      } else if (multiSelectDimension === 'states' || multiSelectDimension === null) {
+        // States is or will become the comparison dimension
+        if (multiSelectDimension === null) {
+          setMultiSelectDimension('states');
+        }
+        setSelectedStates([...selectedStates, state]);
+      } else {
+        // Another dimension is comparing - switch to states
+        const prevDimension = multiSelectDimension;
+        setMultiSelectDimension('states');
+        setSelectedStates([...selectedStates, state]);
+
+        // Reduce previous dimension to single selection
+        if (prevDimension === 'categories' && selectedCategories.length > 1) {
+          setSelectedCategories([selectedCategories[0]]);
+        }
+        if (prevDimension === 'sectors' && selectedSectors.length > 1) {
+          setSelectedSectors([selectedSectors[0]]);
+        }
+
+        showToast(`Switched comparison to State / Region`);
+      }
+    }
   };
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => {
-      const isSelected = prev.includes(category);
+    const isSelected = selectedCategories.includes(category);
 
-      if (isSelected) {
-        // Deselecting - always allow, but ensure at least one remains
-        const newSelection = prev.filter(c => c !== category);
-        return newSelection.length > 0 ? newSelection : prev;
-      } else {
-        // Selecting a new category
-        if (multiSelectDimension === 'categories') {
-          // Categories is the multi-select dimension, allow multiple
-          return [...prev, category];
-        } else if (prev.length === 0) {
-          // No categories selected, allow first selection
-          return [category];
-        } else {
-          // Another dimension has multi-select, replace current selection
-          return [category];
-        }
+    if (isSelected) {
+      // Deselecting
+      const newSelection = selectedCategories.filter(c => c !== category);
+      if (newSelection.length === 0) return; // Prevent empty selection
+
+      setSelectedCategories(newSelection);
+
+      // If we're down to one item and categories was the comparison dimension, clear it
+      if (newSelection.length === 1 && multiSelectDimension === 'categories') {
+        setMultiSelectDimension(null);
       }
-    });
+    } else {
+      // Selecting a new category
+      if (selectedCategories.length === 0) {
+        // First selection
+        setSelectedCategories([category]);
+      } else if (multiSelectDimension === 'categories' || multiSelectDimension === null) {
+        // Categories is or will become the comparison dimension
+        if (multiSelectDimension === null) {
+          setMultiSelectDimension('categories');
+        }
+        setSelectedCategories([...selectedCategories, category]);
+      } else {
+        // Another dimension is comparing - switch to categories
+        const prevDimension = multiSelectDimension;
+        setMultiSelectDimension('categories');
+        setSelectedCategories([...selectedCategories, category]);
+
+        // Reduce previous dimension to single selection
+        if (prevDimension === 'states' && selectedStates.length > 1) {
+          setSelectedStates([selectedStates[0]]);
+        }
+        if (prevDimension === 'sectors' && selectedSectors.length > 1) {
+          setSelectedSectors([selectedSectors[0]]);
+        }
+
+        showToast(`Switched comparison to Categories`);
+      }
+    }
   };
 
   const toggleSector = (sector: string) => {
-    setSelectedSectors(prev => {
-      const isSelected = prev.includes(sector);
+    const isSelected = selectedSectors.includes(sector);
 
-      if (isSelected) {
-        // Deselecting - always allow, but ensure at least one remains
-        const newSelection = prev.filter(s => s !== sector);
-        return newSelection.length > 0 ? newSelection : prev;
-      } else {
-        // Selecting a new sector
-        if (multiSelectDimension === 'sectors') {
-          // Sectors is the multi-select dimension, allow multiple
-          return [...prev, sector];
-        } else if (prev.length === 0) {
-          // No sectors selected, allow first selection
-          return [sector];
-        } else {
-          // Another dimension has multi-select, replace current selection
-          return [sector];
-        }
+    if (isSelected) {
+      // Deselecting
+      const newSelection = selectedSectors.filter(s => s !== sector);
+      if (newSelection.length === 0) return; // Prevent empty selection
+
+      setSelectedSectors(newSelection);
+
+      // If we're down to one item and sectors was the comparison dimension, clear it
+      if (newSelection.length === 1 && multiSelectDimension === 'sectors') {
+        setMultiSelectDimension(null);
       }
-    });
+    } else {
+      // Selecting a new sector
+      if (selectedSectors.length === 0) {
+        // First selection
+        setSelectedSectors([sector]);
+      } else if (multiSelectDimension === 'sectors' || multiSelectDimension === null) {
+        // Sectors is or will become the comparison dimension
+        if (multiSelectDimension === null) {
+          setMultiSelectDimension('sectors');
+        }
+        setSelectedSectors([...selectedSectors, sector]);
+      } else {
+        // Another dimension is comparing - switch to sectors
+        const prevDimension = multiSelectDimension;
+        setMultiSelectDimension('sectors');
+        setSelectedSectors([...selectedSectors, sector]);
+
+        // Reduce previous dimension to single selection
+        if (prevDimension === 'states' && selectedStates.length > 1) {
+          setSelectedStates([selectedStates[0]]);
+        }
+        if (prevDimension === 'categories' && selectedCategories.length > 1) {
+          setSelectedCategories([selectedCategories[0]]);
+        }
+
+        showToast(`Switched comparison to Sectors`);
+      }
+    }
   };
 
-  // Switch the multi-select dimension
-  const switchMultiSelectDimension = (dimension: 'states' | 'categories' | 'sectors') => {
-    if (dimension === multiSelectDimension) return;
-
-    // When switching dimensions, restrict other dimensions to single selection
-    setMultiSelectDimension(dimension);
-
-    if (dimension !== 'states' && selectedStates.length > 1) {
-      setSelectedStates([selectedStates[0]]);
-    }
-    if (dimension !== 'categories' && selectedCategories.length > 1) {
-      setSelectedCategories([selectedCategories[0]]);
-    }
-    if (dimension !== 'sectors' && selectedSectors.length > 1) {
-      setSelectedSectors([selectedSectors[0]]);
-    }
+  // Check if a dimension is locked (another dimension is comparing)
+  const isDimensionLocked = (dimension: 'states' | 'categories' | 'sectors'): boolean => {
+    return multiSelectDimension !== null && multiSelectDimension !== dimension;
   };
 
   // Filter states based on search
@@ -490,14 +560,17 @@ export default function Home() {
     chartStates: string[],
     chartCategories: string[],
     chartSectors: string[],
-    dimension: 'states' | 'categories' | 'sectors'
+    dimension: 'states' | 'categories' | 'sectors' | null
   ): string => {
     if (dimension === 'states') {
       return `CPI – ${chartCategories[0]} – ${chartSectors[0]}`;
     } else if (dimension === 'categories') {
       return `CPI – ${chartStates[0]} – ${chartSectors[0]}`;
-    } else {
+    } else if (dimension === 'sectors') {
       return `CPI – ${chartStates[0]} – ${chartCategories[0]}`;
+    } else {
+      // No comparison dimension - show all single selections
+      return `CPI – ${chartStates[0]} – ${chartCategories[0]} – ${chartSectors[0]}`;
     }
   };
 
@@ -569,8 +642,8 @@ export default function Home() {
     // Reset to defaults
     setSelectedStates(['ALL India']);
     setSelectedCategories(['General Index (All Groups)']);
-    setSelectedSectors(['Rural', 'Urban', 'Rural + Urban']);
-    setMultiSelectDimension('sectors');
+    setSelectedSectors(['Rural + Urban']);
+    setMultiSelectDimension(null);
   };
 
   // Edit a chart
@@ -616,6 +689,7 @@ export default function Home() {
    * - If multiSelectDimension === 'states': one line per state
    * - If multiSelectDimension === 'categories': one line per category
    * - If multiSelectDimension === 'sectors': one line per sector
+   * - If multiSelectDimension === null: single line for the fixed combination
    *
    * The other two dimensions are fixed (single value each) for that chart.
    */
@@ -623,7 +697,7 @@ export default function Home() {
     chartStates: string[],
     chartCategories: string[],
     chartSectors: string[],
-    dimension: 'states' | 'categories' | 'sectors'
+    dimension: 'states' | 'categories' | 'sectors' | null
   ) => {
     const lines: ReactElement[] = [];
 
@@ -663,7 +737,7 @@ export default function Home() {
           />
         );
       });
-    } else {
+    } else if (dimension === 'sectors') {
       // One line per sector, fixed state and category
       chartSectors.forEach(sector => {
         const key = `${chartStates[0]}_${sector}_${chartCategories[0]}`;
@@ -681,22 +755,58 @@ export default function Home() {
           />
         );
       });
+    } else {
+      // No comparison dimension - single line
+      const key = `${chartStates[0]}_${chartSectors[0]}_${chartCategories[0]}`;
+      lines.push(
+        <Line
+          key={key}
+          type="monotone"
+          dataKey={key}
+          name={`${chartStates[0]} - ${chartCategories[0]} - ${chartSectors[0]}`}
+          stroke={CATEGORY_COLORS[chartCategories[0]] || '#8b5cf6'}
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 5, strokeWidth: 0 }}
+          connectNulls
+        />
+      );
     }
 
     return lines;
   };
 
-  // Get helper text for dimension restriction
-  const getDimensionHelperText = (dimension: 'states' | 'categories' | 'sectors'): string | null => {
-    if (multiSelectDimension === dimension) {
-      return 'Multi-select enabled';
-    }
-    const dimensionNames = {
+  // Get section header text for each dimension
+  const getSectionHeader = (dimension: 'states' | 'categories' | 'sectors'): { title: string; subtitle: string } => {
+    const baseTitles = {
       states: 'State / Region',
       categories: 'Categories',
       sectors: 'Sectors'
     };
-    return `Limited to one (${dimensionNames[multiSelectDimension]} has multi-select)`;
+
+    if (multiSelectDimension === dimension) {
+      return {
+        title: baseTitles[dimension],
+        subtitle: 'Comparing (select multiple)'
+      };
+    } else if (multiSelectDimension !== null) {
+      return {
+        title: baseTitles[dimension],
+        subtitle: 'Single selection'
+      };
+    } else {
+      return {
+        title: baseTitles[dimension],
+        subtitle: 'Select to compare'
+      };
+    }
+  };
+
+  // Get lock tooltip text
+  const getLockTooltip = (dimension: 'states' | 'categories' | 'sectors'): string => {
+    if (multiSelectDimension === null) return '';
+    if (multiSelectDimension === dimension) return '';
+    return `Locked while comparing ${getDimensionDisplayName(multiSelectDimension)}`;
   };
 
   return (
@@ -712,13 +822,30 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Toast Notifications */}
+        {toasts.length > 0 && (
+          <div className="fixed top-4 right-4 z-50 space-y-2">
+            {toasts.map(toast => (
+              <div
+                key={toast.id}
+                className="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 shadow-xl animate-in slide-in-from-right duration-300 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm text-slate-200">{toast.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Chart Builder Panel */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-6 mb-6 md:mb-8 shadow-xl">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
             <div>
               <h2 className="text-lg font-semibold text-slate-200">Chart Builder</h2>
               <p className="text-xs text-slate-500 mt-1">
-                Select filters to configure your chart. Only one dimension can have multiple selections.
+                Select multiple items in any dimension to compare them. Other dimensions will lock to single selection.
               </p>
             </div>
 
@@ -756,147 +883,106 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Multi-select Dimension Selector */}
-          <div className="mb-4 p-3 bg-slate-700/30 rounded-xl border border-slate-600/30">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Compare by:</span>
-              {(['states', 'categories', 'sectors'] as const).map(dim => (
-                <button
-                  key={dim}
-                  onClick={() => switchMultiSelectDimension(dim)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                    multiSelectDimension === dim
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-600/50 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  {dim === 'states' ? 'State / Region' : dim === 'categories' ? 'Categories' : 'Sectors'}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Multiple selection is enabled for <span className="text-blue-400 font-medium">
-                {multiSelectDimension === 'states' ? 'State / Region' : multiSelectDimension === 'categories' ? 'Categories' : 'Sectors'}
-              </span>. Other dimensions are limited to one selection to keep charts readable.
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 
-            {/* State Selection - Now supports multi-select */}
+            {/* State / Region Selection - Inline like Categories */}
             <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-cyan-400 rounded-full"></span>
-                State / Region
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                  {getSectionHeader('states').title}
+                </h2>
                 {multiSelectDimension === 'states' && (
                   <span className="ml-auto text-[10px] font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
-                    Multi
+                    Comparing
                   </span>
                 )}
-              </h2>
-              <div className="relative" ref={stateDropdownRef}>
-                <button
-                  onClick={() => setIsStateDropdownOpen(!isStateDropdownOpen)}
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-left text-slate-200 hover:bg-slate-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 flex items-center justify-between"
-                >
-                  <span className="truncate">
-                    {selectedStates.length === 1
-                      ? selectedStates[0]
-                      : `${selectedStates.length} states selected`}
+                {isDimensionLocked('states') && (
+                  <span className="ml-auto text-slate-500" title={getLockTooltip('states')}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
                   </span>
-                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isStateDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {isStateDropdownOpen && (
-                  <div className="absolute z-[100] w-full mt-2 bg-slate-800 border border-slate-600/50 rounded-xl shadow-2xl overflow-hidden">
-                    <div className="p-2 border-b border-slate-700">
-                      <input
-                        type="text"
-                        value={stateSearch}
-                        onChange={(e) => setStateSearch(e.target.value)}
-                        placeholder="Search states..."
-                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
-                        autoFocus
-                      />
-                    </div>
-                    <div className="max-h-60 overflow-y-auto scrollbar-thin">
-                      {filteredStates.map((state) => {
-                        const isSelected = selectedStates.includes(state);
-
-                        return (
-                          <button
-                            key={state}
-                            onClick={() => {
-                              if (multiSelectDimension === 'states') {
-                                toggleState(state);
-                              } else {
-                                // Single select mode - replace selection
-                                setSelectedStates([state]);
-                                setIsStateDropdownOpen(false);
-                                setStateSearch('');
-                              }
-                            }}
-                            className={`w-full px-4 py-2.5 text-left text-sm transition-colors duration-150 flex items-center gap-2 ${
-                              isSelected
-                                ? 'bg-cyan-600/30 text-cyan-300'
-                                : 'text-slate-300 hover:bg-slate-700/50'
-                            }`}
-                          >
-                            {multiSelectDimension === 'states' && (
-                              <span className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                isSelected ? 'bg-cyan-500 border-cyan-500' : 'border-slate-500'
-                              }`}>
-                                {isSelected && (
-                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </span>
-                            )}
-                            {state}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {multiSelectDimension === 'states' && (
-                      <div className="p-2 border-t border-slate-700">
-                        <button
-                          onClick={() => {
-                            setIsStateDropdownOpen(false);
-                            setStateSearch('');
-                          }}
-                          className="w-full px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 )}
               </div>
-              {multiSelectDimension !== 'states' && (
-                <p className="text-[10px] text-slate-500">
-                  {getDimensionHelperText('states')}
-                </p>
-              )}
+              <p className="text-[10px] text-slate-500 -mt-1">
+                {getSectionHeader('states').subtitle}
+              </p>
+
+              {/* Search input for states */}
+              <div ref={stateDropdownRef}>
+                <input
+                  type="text"
+                  value={stateSearch}
+                  onChange={(e) => setStateSearch(e.target.value)}
+                  placeholder="Search states..."
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm mb-2"
+                />
+              </div>
+
+              {/* States list - inline like Categories */}
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                {filteredStates.map((state, index) => {
+                  const isSelected = selectedStates.includes(state);
+                  const isLocked = isDimensionLocked('states');
+
+                  return (
+                    <label
+                      key={state}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                        isSelected
+                          ? 'bg-cyan-600/20 border border-cyan-500/30'
+                          : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
+                      } ${isLocked && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={isLocked && !isSelected ? getLockTooltip('states') : ''}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleState(state)}
+                        disabled={isLocked && !isSelected}
+                        className="w-4 h-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 bg-slate-700"
+                      />
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: STATE_COLORS[index % STATE_COLORS.length] }}
+                        ></span>
+                        <span className="text-sm text-slate-300 leading-tight truncate">{state}</span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Categories Selection */}
             <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                Categories
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                  {getSectionHeader('categories').title}
+                </h2>
                 {multiSelectDimension === 'categories' && (
                   <span className="ml-auto text-[10px] font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
-                    Multi
+                    Comparing
                   </span>
                 )}
-              </h2>
+                {isDimensionLocked('categories') && (
+                  <span className="ml-auto text-slate-500" title={getLockTooltip('categories')}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 -mt-1">
+                {getSectionHeader('categories').subtitle}
+              </p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
                 {CATEGORIES.map((category) => {
                   const isSelected = selectedCategories.includes(category);
+                  const isLocked = isDimensionLocked('categories');
 
                   return (
                     <label
@@ -905,13 +991,14 @@ export default function Home() {
                         isSelected
                           ? 'bg-blue-600/20 border border-blue-500/30'
                           : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      } ${multiSelectDimension !== 'categories' && !isSelected && selectedCategories.length > 0 ? 'opacity-50' : ''}`}
+                      } ${isLocked && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={isLocked && !isSelected ? getLockTooltip('categories') : ''}
                     >
                       <input
-                        type={multiSelectDimension === 'categories' ? 'checkbox' : 'radio'}
-                        name="category"
+                        type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleCategory(category)}
+                        disabled={isLocked && !isSelected}
                         className="w-4 h-4 rounded border-slate-500 text-blue-500 focus:ring-blue-500/50 focus:ring-offset-0 bg-slate-700"
                       />
                       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -925,27 +1012,35 @@ export default function Home() {
                   );
                 })}
               </div>
-              {multiSelectDimension !== 'categories' && (
-                <p className="text-[10px] text-slate-500">
-                  {getDimensionHelperText('categories')}
-                </p>
-              )}
             </div>
 
             {/* Sector Selection */}
             <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                Sectors
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                  {getSectionHeader('sectors').title}
+                </h2>
                 {multiSelectDimension === 'sectors' && (
                   <span className="ml-auto text-[10px] font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
-                    Multi
+                    Comparing
                   </span>
                 )}
-              </h2>
+                {isDimensionLocked('sectors') && (
+                  <span className="ml-auto text-slate-500" title={getLockTooltip('sectors')}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 -mt-1">
+                {getSectionHeader('sectors').subtitle}
+              </p>
               <div className="space-y-2">
                 {SECTORS.map((sector) => {
                   const isSelected = selectedSectors.includes(sector);
+                  const isLocked = isDimensionLocked('sectors');
 
                   return (
                     <label
@@ -954,13 +1049,14 @@ export default function Home() {
                         isSelected
                           ? 'bg-green-600/20 border border-green-500/30'
                           : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      } ${multiSelectDimension !== 'sectors' && !isSelected && selectedSectors.length > 0 ? 'opacity-50' : ''}`}
+                      } ${isLocked && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={isLocked && !isSelected ? getLockTooltip('sectors') : ''}
                     >
                       <input
-                        type={multiSelectDimension === 'sectors' ? 'checkbox' : 'radio'}
-                        name="sector"
+                        type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSector(sector)}
+                        disabled={isLocked && !isSelected}
                         className="w-4 h-4 rounded border-slate-500 text-green-500 focus:ring-green-500/50 focus:ring-offset-0 bg-slate-700"
                       />
                       <div className="flex items-center gap-2">
@@ -974,11 +1070,6 @@ export default function Home() {
                   );
                 })}
               </div>
-              {multiSelectDimension !== 'sectors' && (
-                <p className="text-[10px] text-slate-500">
-                  {getDimensionHelperText('sectors')}
-                </p>
-              )}
             </div>
 
             {/* Date Range Selection */}
@@ -1117,6 +1208,18 @@ export default function Home() {
 
         {/* Live Preview Chart */}
         <div ref={chartPreviewRef} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl mb-6 md:mb-8">
+          {/* Comparing Label */}
+          {multiSelectDimension && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-xs font-medium text-blue-400 uppercase tracking-wide flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Comparing {getDimensionDisplayName(multiSelectDimension)}
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 gap-2">
             <div>
               <h2 className="text-lg md:text-xl font-semibold text-slate-200">

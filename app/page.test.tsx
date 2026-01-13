@@ -73,15 +73,8 @@ describe('CPI Index Page', () => {
     });
   });
 
-  it('opens state dropdown when clicked', async () => {
+  it('displays search input for states', async () => {
     render(<Home />);
-
-    await waitFor(() => {
-      expect(screen.getByText('ALL India')).toBeInTheDocument();
-    });
-
-    const stateButton = screen.getByRole('button', { name: /ALL India/i });
-    fireEvent.click(stateButton);
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Search states...')).toBeInTheDocument();
@@ -95,22 +88,13 @@ describe('CPI Index Page', () => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
-    // Open dropdown
-    const stateButton = screen.getByRole('button', { name: /ALL India/i });
-    fireEvent.click(stateButton);
-
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search states...')).toBeInTheDocument();
-    });
-
     // Search for Delhi
     const searchInput = screen.getByPlaceholderText('Search states...');
     fireEvent.change(searchInput, { target: { value: 'Delhi' } });
 
     await waitFor(() => {
-      const buttons = screen.getAllByRole('button');
-      const delhiButton = buttons.find(btn => btn.textContent?.includes('Delhi'));
-      expect(delhiButton).toBeInTheDocument();
+      // Delhi should still be visible, ALL India should be filtered out
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
     });
   });
 
@@ -142,11 +126,11 @@ describe('CPI Index Page', () => {
     render(<Home />);
 
     await waitFor(() => {
-      // Categories are radio buttons by default (since sectors has multi-select)
-      const radioOrCheckbox = screen.getAllByRole('radio').find(el =>
+      // All filter inputs are now checkboxes
+      const checkbox = screen.getAllByRole('checkbox').find(el =>
         el.closest('label')?.textContent?.includes('General Index (All Groups)')
       );
-      expect(radioOrCheckbox).toBeChecked();
+      expect(checkbox).toBeChecked();
     });
   });
 
@@ -184,32 +168,17 @@ describe('CPI Index Page', () => {
     expect(screen.getByText(/Ministry of Statistics and Programme Implementation/)).toBeInTheDocument();
   });
 
-  it('allows selecting a different state', async () => {
+  it('allows selecting a state via checkbox', async () => {
     render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
-    // Open dropdown
-    const stateButton = screen.getByRole('button', { name: /ALL India/i });
-    fireEvent.click(stateButton);
-
+    // Find Delhi checkbox in the states list
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search states...')).toBeInTheDocument();
-    });
-
-    // Select Delhi
-    const buttons = screen.getAllByRole('button');
-    const delhiButton = buttons.find(btn => btn.textContent?.includes('Delhi'));
-    if (delhiButton) {
-      fireEvent.click(delhiButton);
-    }
-
-    // Check that Delhi is now selected
-    await waitFor(() => {
-      const stateBtn = screen.getByRole('button', { name: /Delhi/i });
-      expect(stateBtn).toBeInTheDocument();
+      const delhiLabel = screen.getByText('Delhi').closest('label');
+      expect(delhiLabel).toBeInTheDocument();
     });
   });
 });
@@ -227,11 +196,11 @@ describe('Chart Builder', () => {
     });
   });
 
-  it('displays Compare by dimension selector', async () => {
+  it('displays instruction for implicit comparison', async () => {
     render(<Home />);
 
     await waitFor(() => {
-      expect(screen.getByText('Compare by:')).toBeInTheDocument();
+      expect(screen.getByText(/Select multiple items in any dimension to compare them/)).toBeInTheDocument();
     });
   });
 
@@ -256,6 +225,88 @@ describe('Chart Builder', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Build a chart using the filters above/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows "Select to compare" subtitle initially for all dimensions', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      // All dimensions should show "Select to compare" when no comparison is active
+      const selectToCompareElements = screen.getAllByText('Select to compare');
+      expect(selectToCompareElements.length).toBe(3); // States, Categories, Sectors
+    });
+  });
+});
+
+describe('Implicit Comparison Behavior', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('shows "Comparing" badge when multiple items selected in a dimension', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ALL India')).toBeInTheDocument();
+    });
+
+    // Find and click Delhi checkbox to add a second state
+    const delhiLabel = screen.getByText('Delhi').closest('label');
+    if (delhiLabel) {
+      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Should show "Comparing" badge for states dimension
+      expect(screen.getByText('Comparing')).toBeInTheDocument();
+    });
+  });
+
+  it('shows lock icon on other dimensions when one dimension is comparing', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ALL India')).toBeInTheDocument();
+    });
+
+    // Select a second state to activate comparison
+    const delhiLabel = screen.getByText('Delhi').closest('label');
+    if (delhiLabel) {
+      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Should show "Single selection" for locked dimensions
+      const singleSelectionElements = screen.getAllByText('Single selection');
+      expect(singleSelectionElements.length).toBe(2); // Categories and Sectors should be locked
+    });
+  });
+
+  it('shows "Comparing <Dimension>" label above live preview when comparing', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ALL India')).toBeInTheDocument();
+    });
+
+    // Select a second state to activate comparison
+    const delhiLabel = screen.getByText('Delhi').closest('label');
+    if (delhiLabel) {
+      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText(/Comparing State \/ Region/)).toBeInTheDocument();
     });
   });
 });
