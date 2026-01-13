@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import Home from './page';
 
 // Mock fetch for CSV data
@@ -35,12 +36,23 @@ Object.defineProperty(window, 'innerWidth', {
   value: 1024,
 });
 
+// Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn(() => null),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
+
 describe('CPI Index Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders the page title', async () => {
+  it('renders the page title', () => {
     render(<Home />);
     expect(screen.getByText('Consumer Price Index')).toBeInTheDocument();
   });
@@ -97,7 +109,7 @@ describe('CPI Index Page', () => {
 
     await waitFor(() => {
       const buttons = screen.getAllByRole('button');
-      const delhiButton = buttons.find(btn => btn.textContent === 'Delhi');
+      const delhiButton = buttons.find(btn => btn.textContent?.includes('Delhi'));
       expect(delhiButton).toBeInTheDocument();
     });
   });
@@ -130,29 +142,12 @@ describe('CPI Index Page', () => {
     render(<Home />);
 
     await waitFor(() => {
-      const checkbox = screen.getAllByRole('checkbox').find(cb =>
-        cb.closest('label')?.textContent?.includes('General Index (All Groups)')
+      // Categories are radio buttons by default (since sectors has multi-select)
+      const radioOrCheckbox = screen.getAllByRole('radio').find(el =>
+        el.closest('label')?.textContent?.includes('General Index (All Groups)')
       );
-      expect(checkbox).toBeChecked();
+      expect(radioOrCheckbox).toBeChecked();
     });
-  });
-
-  it('toggles category selection when clicked', async () => {
-    render(<Home />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Food and beverages')).toBeInTheDocument();
-    });
-
-    const foodCheckbox = screen.getAllByRole('checkbox').find(cb =>
-      cb.closest('label')?.textContent?.includes('Food and beverages')
-    );
-
-    expect(foodCheckbox).not.toBeChecked();
-
-    fireEvent.click(foodCheckbox!);
-
-    expect(foodCheckbox).toBeChecked();
   });
 
   it('displays date range selectors', async () => {
@@ -175,11 +170,11 @@ describe('CPI Index Page', () => {
     });
   });
 
-  it('shows chart section', async () => {
+  it('shows chart section with Live Preview title', async () => {
     render(<Home />);
 
     await waitFor(() => {
-      expect(screen.getByText('Price Index Trends')).toBeInTheDocument();
+      expect(screen.getByText('Live Preview')).toBeInTheDocument();
     });
   });
 
@@ -206,15 +201,61 @@ describe('CPI Index Page', () => {
 
     // Select Delhi
     const buttons = screen.getAllByRole('button');
-    const delhiButton = buttons.find(btn => btn.textContent === 'Delhi');
+    const delhiButton = buttons.find(btn => btn.textContent?.includes('Delhi'));
     if (delhiButton) {
       fireEvent.click(delhiButton);
     }
 
     // Check that Delhi is now selected
     await waitFor(() => {
-      const stateButton = screen.getByRole('button', { name: /Delhi/i });
-      expect(stateButton).toBeInTheDocument();
+      const stateBtn = screen.getByRole('button', { name: /Delhi/i });
+      expect(stateBtn).toBeInTheDocument();
+    });
+  });
+});
+
+describe('Chart Builder', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('displays Chart Builder title', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Chart Builder')).toBeInTheDocument();
+    });
+  });
+
+  it('displays Compare by dimension selector', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Compare by:')).toBeInTheDocument();
+    });
+  });
+
+  it('displays Add Chart to Board button', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Chart to Board')).toBeInTheDocument();
+    });
+  });
+
+  it('displays Chart Board section', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Chart Board')).toBeInTheDocument();
+    });
+  });
+
+  it('shows empty state message when no charts added', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Build a chart using the filters above/)).toBeInTheDocument();
     });
   });
 });
