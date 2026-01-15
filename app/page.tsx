@@ -56,10 +56,15 @@ const CATEGORY_COLORS: { [key: string]: string } = {
   'Miscellaneous': '#a855f7'
 };
 
-// State colors for when states are the multi-select dimension
+// State colors for when states are the multi-select dimension - extended unique palette
 const STATE_COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'
+  '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
+  '#a855f7', '#f43f5e', '#22c55e', '#0ea5e9', '#eab308',
+  '#d946ef', '#6366f1', '#059669', '#dc2626', '#7c3aed',
+  '#16a34a', '#ea580c', '#0891b2', '#c026d3', '#4f46e5',
+  '#65a30d', '#db2777', '#0d9488', '#9333ea', '#2563eb',
+  '#ca8a04', '#e11d48', '#15803d', '#7c2d12', '#4338ca'
 ];
 
 const SECTOR_MAP: { [key: string]: string } = {
@@ -78,6 +83,92 @@ const CATEGORIES = [
   'Miscellaneous'
 ];
 
+// Display names for categories (maps data key to user-friendly display name)
+const CATEGORY_DISPLAY_NAMES: { [key: string]: string } = {
+  'Pan; tobacco; and intoxicants': 'Pan, tobacco & intoxicants'
+};
+
+// Helper to get display name for a category
+const getCategoryDisplayName = (category: string): string => {
+  return CATEGORY_DISPLAY_NAMES[category] || category;
+};
+
+// Custom tooltip component with color indicators and sorted by value
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    color: string;
+    dataKey: string;
+  }>;
+  label?: string;
+  small?: boolean;
+}
+
+const CustomTooltip = ({ active, payload, label, small = false }: CustomTooltipProps) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  // Sort payload by value (highest to lowest)
+  const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#1e293b',
+        border: '1px solid #334155',
+        borderRadius: small ? '8px' : '12px',
+        boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
+        padding: small ? '8px' : '12px'
+      }}
+    >
+      <p style={{
+        color: '#e2e8f0',
+        marginBottom: small ? '4px' : '8px',
+        fontWeight: 600,
+        fontSize: small ? '11px' : '14px'
+      }}>
+        {label}
+      </p>
+      {sortedPayload.map((entry, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: small ? '1px 0' : '2px 0'
+          }}
+        >
+          <span
+            style={{
+              width: small ? '8px' : '10px',
+              height: small ? '8px' : '10px',
+              borderRadius: '50%',
+              backgroundColor: entry.color,
+              flexShrink: 0
+            }}
+          />
+          <span style={{
+            color: '#cbd5e1',
+            fontSize: small ? '10px' : '12px',
+            flex: 1
+          }}>
+            {getCategoryDisplayName(entry.name)}
+          </span>
+          <span style={{
+            color: '#94a3b8',
+            fontSize: small ? '10px' : '12px',
+            fontWeight: 500
+          }}>
+            {entry.value?.toFixed(1)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const SECTORS = ['Rural', 'Urban', 'Rural + Urban'];
 
 export default function Home() {
@@ -85,7 +176,7 @@ export default function Home() {
   const [chartData, setChartData] = useState<any[]>([]);
 
   // Multi-select states (converted from single select)
-  const [selectedStates, setSelectedStates] = useState<string[]>(['ALL India']);
+  const [selectedStates, setSelectedStates] = useState<string[]>(['All India']);
   const [states, setStates] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General Index (All Groups)']);
   const [selectedSectors, setSelectedSectors] = useState<string[]>(['Rural + Urban']);
@@ -169,14 +260,14 @@ export default function Home() {
             ) as CPIData[];
             setData(parsedData);
 
-            // Extract unique states - ALL India first, then alphabetically
+            // Extract unique states - All India first, then alphabetically
             const uniqueStates = Array.from(new Set(
               parsedData.map(row => row.State)
             )).filter(s => s && s !== 'State');
 
             const sortedStates = uniqueStates.sort((a, b) => {
-              if (a === 'ALL India') return -1;
-              if (b === 'ALL India') return 1;
+              if (a === 'All India') return -1;
+              if (b === 'All India') return 1;
               return a.localeCompare(b);
             });
             setStates(sortedStates);
@@ -419,12 +510,12 @@ export default function Home() {
         setMultiSelectDimension('states');
         setSelectedStates([...selectedStates, state]);
 
-        // Reduce previous dimension to single selection
+        // Reduce previous dimension to single selection (keep last selected item)
         if (prevDimension === 'categories' && selectedCategories.length > 1) {
-          setSelectedCategories([selectedCategories[0]]);
+          setSelectedCategories([selectedCategories[selectedCategories.length - 1]]);
         }
         if (prevDimension === 'sectors' && selectedSectors.length > 1) {
-          setSelectedSectors([selectedSectors[0]]);
+          setSelectedSectors([selectedSectors[selectedSectors.length - 1]]);
         }
 
         showToast(`Switched comparison to State / Region`);
@@ -463,12 +554,12 @@ export default function Home() {
         setMultiSelectDimension('categories');
         setSelectedCategories([...selectedCategories, category]);
 
-        // Reduce previous dimension to single selection
+        // Reduce previous dimension to single selection (keep last selected item)
         if (prevDimension === 'states' && selectedStates.length > 1) {
-          setSelectedStates([selectedStates[0]]);
+          setSelectedStates([selectedStates[selectedStates.length - 1]]);
         }
         if (prevDimension === 'sectors' && selectedSectors.length > 1) {
-          setSelectedSectors([selectedSectors[0]]);
+          setSelectedSectors([selectedSectors[selectedSectors.length - 1]]);
         }
 
         showToast(`Switched comparison to Categories`);
@@ -507,22 +598,17 @@ export default function Home() {
         setMultiSelectDimension('sectors');
         setSelectedSectors([...selectedSectors, sector]);
 
-        // Reduce previous dimension to single selection
+        // Reduce previous dimension to single selection (keep last selected item)
         if (prevDimension === 'states' && selectedStates.length > 1) {
-          setSelectedStates([selectedStates[0]]);
+          setSelectedStates([selectedStates[selectedStates.length - 1]]);
         }
         if (prevDimension === 'categories' && selectedCategories.length > 1) {
-          setSelectedCategories([selectedCategories[0]]);
+          setSelectedCategories([selectedCategories[selectedCategories.length - 1]]);
         }
 
         showToast(`Switched comparison to Sectors`);
       }
     }
-  };
-
-  // Check if a dimension is locked (another dimension is comparing)
-  const isDimensionLocked = (dimension: 'states' | 'categories' | 'sectors'): boolean => {
-    return multiSelectDimension !== null && multiSelectDimension !== dimension;
   };
 
   // Filter states based on search
@@ -640,7 +726,7 @@ export default function Home() {
   const cancelEditing = () => {
     setEditingChartId(null);
     // Reset to defaults
-    setSelectedStates(['ALL India']);
+    setSelectedStates(['All India']);
     setSelectedCategories(['General Index (All Groups)']);
     setSelectedSectors(['Rural + Urban']);
     setMultiSelectDimension(null);
@@ -703,7 +789,10 @@ export default function Home() {
 
     if (dimension === 'states') {
       // One line per state, fixed category and sector
-      chartStates.forEach((state, index) => {
+      // Use stable color based on state's index in the full states array
+      chartStates.forEach((state) => {
+        const stateIndex = states.indexOf(state);
+        const colorIndex = stateIndex >= 0 ? stateIndex : chartStates.indexOf(state);
         const key = `${state}_${chartSectors[0]}_${chartCategories[0]}`;
         lines.push(
           <Line
@@ -711,7 +800,7 @@ export default function Home() {
             type="monotone"
             dataKey={key}
             name={state}
-            stroke={STATE_COLORS[index % STATE_COLORS.length]}
+            stroke={STATE_COLORS[colorIndex % STATE_COLORS.length]}
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 5, strokeWidth: 0 }}
@@ -777,49 +866,55 @@ export default function Home() {
   };
 
   // Get section header text for each dimension
-  const getSectionHeader = (dimension: 'states' | 'categories' | 'sectors'): { title: string; subtitle: string } => {
+  const getSectionHeader = (dimension: 'states' | 'categories' | 'sectors'): { title: string } => {
     const baseTitles = {
       states: 'State / Region',
       categories: 'Categories',
       sectors: 'Sectors'
     };
 
-    if (multiSelectDimension === dimension) {
-      return {
-        title: baseTitles[dimension],
-        subtitle: 'Comparing (select multiple)'
-      };
-    } else if (multiSelectDimension !== null) {
-      return {
-        title: baseTitles[dimension],
-        subtitle: 'Single selection'
-      };
-    } else {
-      return {
-        title: baseTitles[dimension],
-        subtitle: 'Select to compare'
-      };
+    return {
+      title: baseTitles[dimension]
+    };
+  };
+
+  // Reset functions for each dimension
+  const resetStates = () => {
+    setSelectedStates(['All India']);
+    if (multiSelectDimension === 'states') {
+      setMultiSelectDimension(null);
     }
   };
 
-  // Get lock tooltip text
-  const getLockTooltip = (dimension: 'states' | 'categories' | 'sectors'): string => {
-    if (multiSelectDimension === null) return '';
-    if (multiSelectDimension === dimension) return '';
-    return `Locked while comparing ${getDimensionDisplayName(multiSelectDimension)}`;
+  const resetCategories = () => {
+    setSelectedCategories(['General Index (All Groups)']);
+    if (multiSelectDimension === 'categories') {
+      setMultiSelectDimension(null);
+    }
+  };
+
+  const resetSectors = () => {
+    setSelectedSectors(['Rural + Urban']);
+    if (multiSelectDimension === 'sectors') {
+      setMultiSelectDimension(null);
+    }
+  };
+
+  const resetAllDimensions = () => {
+    setSelectedStates(['All India']);
+    setSelectedCategories(['General Index (All Groups)']);
+    setSelectedSectors(['Rural + Urban']);
+    setMultiSelectDimension(null);
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 md:mb-8 text-center md:text-left">
-          <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-            Consumer Price Index
+        <div className="mb-6 md:mb-8 text-center">
+          <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Consumer Price Index - India
           </h1>
-          <p className="text-slate-400 text-sm md:text-lg">
-            India CPI Data (Base: 2012=100) • Jan 2013 - Nov 2025
-          </p>
         </div>
 
         {/* Toast Notifications */}
@@ -844,13 +939,19 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
             <div>
               <h2 className="text-lg font-semibold text-slate-200">Chart Builder</h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 Select multiple items in any dimension to compare them. Other dimensions will lock to single selection.
               </p>
             </div>
 
             {/* Add Chart / Edit Mode Buttons */}
             <div className="flex gap-2">
+              <button
+                onClick={resetAllDimensions}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-medium rounded-lg transition-colors duration-200 cursor-pointer"
+              >
+                Reset All
+              </button>
               {editingChartId ? (
                 <>
                   <button
@@ -886,28 +987,24 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 
             {/* State / Region Selection - Inline like Categories */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-cyan-400 rounded-full"></span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                   {getSectionHeader('states').title}
                 </h2>
                 {multiSelectDimension === 'states' && (
-                  <span className="ml-auto text-[10px] font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
+                  <span className="text-sm font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
                     Comparing
                   </span>
                 )}
-                {isDimensionLocked('states') && (
-                  <span className="ml-auto text-slate-500" title={getLockTooltip('states')}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </span>
-                )}
+                <button
+                  onClick={resetStates}
+                  className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  title="Reset to default"
+                >
+                  Reset
+                </button>
               </div>
-              <p className="text-[10px] text-slate-500 -mt-1">
-                {getSectionHeader('states').subtitle}
-              </p>
 
               {/* Search input for states */}
               <div ref={stateDropdownRef}>
@@ -920,11 +1017,21 @@ export default function Home() {
                 />
               </div>
 
-              {/* States list - inline like Categories */}
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
-                {filteredStates.map((state, index) => {
+              {/* States list - inline like Categories with max height for scrollability */}
+              <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
+                {filteredStates
+                  .sort((a, b) => {
+                    const aSelected = selectedStates.includes(a);
+                    const bSelected = selectedStates.includes(b);
+                    if (aSelected && !bSelected) return -1;
+                    if (!aSelected && bSelected) return 1;
+                    if (a === 'All India') return -1;
+                    if (b === 'All India') return 1;
+                    return a.localeCompare(b);
+                  })
+                  .map((state) => {
                   const isSelected = selectedStates.includes(state);
-                  const isLocked = isDimensionLocked('states');
+                  const stateIndex = states.indexOf(state);
 
                   return (
                     <label
@@ -933,23 +1040,21 @@ export default function Home() {
                         isSelected
                           ? 'bg-cyan-600/20 border border-cyan-500/30'
                           : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      } ${isLocked && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title={isLocked && !isSelected ? getLockTooltip('states') : ''}
+                      }`}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleState(state)}
-                        disabled={isLocked && !isSelected}
                         className="w-4 h-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 bg-slate-700"
                       />
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-sm text-slate-300 leading-tight truncate">{state}</span>
+                      {isSelected && multiSelectDimension === 'states' && (
                         <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: STATE_COLORS[index % STATE_COLORS.length] }}
+                          className="w-3 h-3 rounded-full flex-shrink-0 ml-auto"
+                          style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
                         ></span>
-                        <span className="text-sm text-slate-300 leading-tight truncate">{state}</span>
-                      </div>
+                      )}
                     </label>
                   );
                 })}
@@ -957,32 +1062,27 @@ export default function Home() {
             </div>
 
             {/* Categories Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                   {getSectionHeader('categories').title}
                 </h2>
                 {multiSelectDimension === 'categories' && (
-                  <span className="ml-auto text-[10px] font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
+                  <span className="text-sm font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
                     Comparing
                   </span>
                 )}
-                {isDimensionLocked('categories') && (
-                  <span className="ml-auto text-slate-500" title={getLockTooltip('categories')}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </span>
-                )}
+                <button
+                  onClick={resetCategories}
+                  className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  title="Reset to default"
+                >
+                  Reset
+                </button>
               </div>
-              <p className="text-[10px] text-slate-500 -mt-1">
-                {getSectionHeader('categories').subtitle}
-              </p>
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 scrollbar-thin">
                 {CATEGORIES.map((category) => {
                   const isSelected = selectedCategories.includes(category);
-                  const isLocked = isDimensionLocked('categories');
 
                   return (
                     <label
@@ -991,23 +1091,21 @@ export default function Home() {
                         isSelected
                           ? 'bg-blue-600/20 border border-blue-500/30'
                           : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      } ${isLocked && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title={isLocked && !isSelected ? getLockTooltip('categories') : ''}
+                      }`}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleCategory(category)}
-                        disabled={isLocked && !isSelected}
                         className="w-4 h-4 rounded border-slate-500 text-blue-500 focus:ring-blue-500/50 focus:ring-offset-0 bg-slate-700"
                       />
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-sm text-slate-300 leading-tight truncate">{getCategoryDisplayName(category)}</span>
+                      {isSelected && multiSelectDimension === 'categories' && (
                         <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          className="w-3 h-3 rounded-full flex-shrink-0 ml-auto"
                           style={{ backgroundColor: CATEGORY_COLORS[category] }}
                         ></span>
-                        <span className="text-sm text-slate-300 leading-tight truncate">{category}</span>
-                      </div>
+                      )}
                     </label>
                   );
                 })}
@@ -1015,32 +1113,27 @@ export default function Home() {
             </div>
 
             {/* Sector Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                   {getSectionHeader('sectors').title}
                 </h2>
                 {multiSelectDimension === 'sectors' && (
-                  <span className="ml-auto text-[10px] font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
+                  <span className="text-sm font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
                     Comparing
                   </span>
                 )}
-                {isDimensionLocked('sectors') && (
-                  <span className="ml-auto text-slate-500" title={getLockTooltip('sectors')}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </span>
-                )}
+                <button
+                  onClick={resetSectors}
+                  className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  title="Reset to default"
+                >
+                  Reset
+                </button>
               </div>
-              <p className="text-[10px] text-slate-500 -mt-1">
-                {getSectionHeader('sectors').subtitle}
-              </p>
               <div className="space-y-2">
                 {SECTORS.map((sector) => {
                   const isSelected = selectedSectors.includes(sector);
-                  const isLocked = isDimensionLocked('sectors');
 
                   return (
                     <label
@@ -1049,23 +1142,21 @@ export default function Home() {
                         isSelected
                           ? 'bg-green-600/20 border border-green-500/30'
                           : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      } ${isLocked && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title={isLocked && !isSelected ? getLockTooltip('sectors') : ''}
+                      }`}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSector(sector)}
-                        disabled={isLocked && !isSelected}
                         className="w-4 h-4 rounded border-slate-500 text-green-500 focus:ring-green-500/50 focus:ring-offset-0 bg-slate-700"
                       />
-                      <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-300">{sector}</span>
+                      {isSelected && multiSelectDimension === 'sectors' && (
                         <span
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full ml-auto"
                           style={{ backgroundColor: SECTOR_COLORS[sector] }}
                         ></span>
-                        <span className="text-sm font-medium text-slate-300">{sector}</span>
-                      </div>
+                      )}
                     </label>
                   );
                 })}
@@ -1074,13 +1165,12 @@ export default function Home() {
 
             {/* Date Range Selection */}
             <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                 Date Range
               </h2>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
+                  <label className="block text-sm font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
                     From
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1137,7 +1227,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
+                  <label className="block text-sm font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
                     To
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1211,7 +1301,7 @@ export default function Home() {
           {/* Comparing Label */}
           {multiSelectDimension && (
             <div className="mb-3 flex items-center gap-2">
-              <span className="text-xs font-medium text-blue-400 uppercase tracking-wide flex items-center gap-1.5">
+              <span className="text-sm font-medium text-blue-400 uppercase tracking-wide flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
@@ -1225,11 +1315,11 @@ export default function Home() {
               <h2 className="text-lg md:text-xl font-semibold text-slate-200">
                 {editingChartId ? 'Editing Chart' : 'Live Preview'}
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 {generateChartTitle(selectedStates, selectedCategories, selectedSectors, multiSelectDimension)}
               </p>
             </div>
-            <div className="text-xs md:text-sm text-slate-500">
+            <div className="text-sm md:text-sm text-slate-500">
               {selectedStates.length === 1 ? selectedStates[0] : `${selectedStates.length} states`} • {startMonth?.slice(0, 3)} {startYear} - {endMonth?.slice(0, 3)} {endYear}
             </div>
           </div>
@@ -1263,20 +1353,10 @@ export default function Home() {
                   tickLine={{ stroke: '#475569' }}
                   domain={[100, 'dataMax + 10']}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1e293b',
-                    border: '1px solid #334155',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
-                    padding: '12px'
-                  }}
-                  labelStyle={{ color: '#e2e8f0', marginBottom: '8px', fontWeight: 600 }}
-                  itemStyle={{ color: '#cbd5e1', fontSize: '12px', padding: '2px 0' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
-                  formatter={(value) => <span className="text-slate-300 text-xs md:text-sm">{value}</span>}
+                  formatter={(value) => <span className="text-slate-300 text-sm md:text-sm">{value}</span>}
                 />
                 {renderChartLines(selectedStates, selectedCategories, selectedSectors, multiSelectDimension)}
               </LineChart>
@@ -1289,14 +1369,14 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 gap-2">
             <div>
               <h2 className="text-lg md:text-xl font-semibold text-slate-200">Chart Board</h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 {chartBoard.length === 0
                   ? 'Add charts to compare multiple views side by side'
                   : `${chartBoard.length} chart${chartBoard.length !== 1 ? 's' : ''} on board`}
               </p>
             </div>
             {chartBoard.length >= 6 && (
-              <p className="text-xs text-amber-400 flex items-center gap-1">
+              <p className="text-sm text-amber-400 flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -1316,7 +1396,7 @@ export default function Home() {
                 <p className="text-slate-400 text-sm md:text-base mb-2">
                   Build a chart using the filters above and click &apos;Add Chart&apos; to compare multiple views.
                 </p>
-                <p className="text-slate-500 text-xs">
+                <p className="text-slate-500 text-sm">
                   Charts will be saved and persist across page reloads.
                 </p>
               </div>
@@ -1348,8 +1428,8 @@ export default function Home() {
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-semibold text-slate-200 truncate">{chart.title}</h3>
-                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{chart.subtitle}</p>
-                        <p className="text-[10px] text-slate-600 mt-1">
+                        <p className="text-sm text-slate-500 mt-1 line-clamp-2">{chart.subtitle}</p>
+                        <p className="text-sm text-slate-600 mt-1">
                           {chart.startMonth?.slice(0, 3)} {chart.startYear} - {chart.endMonth?.slice(0, 3)} {chart.endYear}
                         </p>
                       </div>
@@ -1389,7 +1469,7 @@ export default function Home() {
                     {/* Chart */}
                     {chartResult.hasNoData ? (
                       <div className="flex items-center justify-center h-48 bg-slate-800/30 rounded-lg">
-                        <p className="text-slate-500 text-xs">No data available</p>
+                        <p className="text-slate-500 text-sm">No data available</p>
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={250}>
@@ -1407,21 +1487,10 @@ export default function Home() {
                             tickLine={{ stroke: '#475569' }}
                             domain={[100, 'dataMax + 10']}
                           />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: '#1e293b',
-                              border: '1px solid #334155',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 20px -4px rgba(0, 0, 0, 0.5)',
-                              padding: '8px',
-                              fontSize: '11px'
-                            }}
-                            labelStyle={{ color: '#e2e8f0', marginBottom: '4px', fontWeight: 600 }}
-                            itemStyle={{ color: '#cbd5e1', fontSize: '10px', padding: '1px 0' }}
-                          />
+                          <Tooltip content={<CustomTooltip small />} />
                           <Legend
                             wrapperStyle={{ paddingTop: '10px' }}
-                            formatter={(value) => <span className="text-slate-300 text-[10px]">{value}</span>}
+                            formatter={(value) => <span className="text-slate-300 text-sm">{value}</span>}
                           />
                           {renderChartLines(
                             chart.selectedStates,
@@ -1440,7 +1509,7 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center text-xs text-slate-600">
+        <div className="mt-6 text-center text-sm text-slate-600">
           Data Source: Ministry of Statistics and Programme Implementation, Government of India
         </div>
       </div>

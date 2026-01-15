@@ -54,7 +54,7 @@ describe('CPI Index Page', () => {
 
   it('renders the page title', () => {
     render(<Home />);
-    expect(screen.getByText('Consumer Price Index')).toBeInTheDocument();
+    expect(screen.getByText('Consumer Price Index - India')).toBeInTheDocument();
   });
 
   it('loads and displays data from CSV', async () => {
@@ -107,7 +107,7 @@ describe('CPI Index Page', () => {
       expect(screen.getByText('Clothing and footwear')).toBeInTheDocument();
       expect(screen.getByText('Fuel and light')).toBeInTheDocument();
       expect(screen.getByText('Housing')).toBeInTheDocument();
-      expect(screen.getByText('Pan; tobacco; and intoxicants')).toBeInTheDocument();
+      expect(screen.getByText('Pan, tobacco & intoxicants')).toBeInTheDocument();
       expect(screen.getByText('Miscellaneous')).toBeInTheDocument();
     });
   });
@@ -228,13 +228,14 @@ describe('Chart Builder', () => {
     });
   });
 
-  it('shows "Select to compare" subtitle initially for all dimensions', async () => {
+  it('shows all dimension sections initially', async () => {
     render(<Home />);
 
     await waitFor(() => {
-      // All dimensions should show "Select to compare" when no comparison is active
-      const selectToCompareElements = screen.getAllByText('Select to compare');
-      expect(selectToCompareElements.length).toBe(3); // States, Categories, Sectors
+      // All dimensions should be visible
+      expect(screen.getByText('State / Region')).toBeInTheDocument();
+      expect(screen.getByText('Categories')).toBeInTheDocument();
+      expect(screen.getByText('Sectors')).toBeInTheDocument();
     });
   });
 });
@@ -266,14 +267,14 @@ describe('Implicit Comparison Behavior', () => {
     });
   });
 
-  it('shows lock icon on other dimensions when one dimension is comparing', async () => {
+  it('allows switching comparison dimension by selecting from another dimension', async () => {
     render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
-    // Select a second state to activate comparison
+    // Select a second state to activate comparison on states
     const delhiLabel = screen.getByText('Delhi').closest('label');
     if (delhiLabel) {
       const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
@@ -283,9 +284,29 @@ describe('Implicit Comparison Behavior', () => {
     }
 
     await waitFor(() => {
-      // Should show "Single selection" for locked dimensions
-      const singleSelectionElements = screen.getAllByText('Single selection');
-      expect(singleSelectionElements.length).toBe(2); // Categories and Sectors should be locked
+      // States should be the comparison dimension
+      expect(screen.getByText('Comparing')).toBeInTheDocument();
+    });
+
+    // Now click on a second sector (Urban) to switch comparison to sectors
+    const urbanLabel = screen.getByText('Urban').closest('label');
+    if (urbanLabel) {
+      const checkbox = urbanLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Should show toast about switching comparison
+      expect(screen.getByText('Switched comparison to Sectors')).toBeInTheDocument();
+    });
+
+    // States should now have only one selected (the last one - Delhi)
+    await waitFor(() => {
+      const allIndiaLabel = screen.getByText('ALL India').closest('label');
+      const allIndiaCheckbox = allIndiaLabel?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      expect(allIndiaCheckbox?.checked).toBe(false);
     });
   });
 
@@ -323,6 +344,147 @@ describe('Date Range Validation', () => {
       // After data loads, check that end year options before start year are disabled
       const yearSelects = screen.getAllByRole('combobox');
       expect(yearSelects.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe('UI Improvements', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('displays category with friendly display name', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      // Should display the friendly name instead of raw data name
+      expect(screen.getByText('Pan, tobacco & intoxicants')).toBeInTheDocument();
+      // Should NOT display the original name
+      expect(screen.queryByText('Pan; tobacco; and intoxicants')).not.toBeInTheDocument();
+    });
+  });
+
+  it('has cursor-pointer class on reset buttons', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      const resetButtons = screen.getAllByText('Reset');
+      resetButtons.forEach(button => {
+        expect(button).toHaveClass('cursor-pointer');
+      });
+    });
+  });
+
+  it('has cursor-pointer class on Reset All button', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      const resetAllButton = screen.getByText('Reset All');
+      expect(resetAllButton).toHaveClass('cursor-pointer');
+    });
+  });
+
+  it('has scrollable state list with max-height', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ALL India')).toBeInTheDocument();
+    });
+
+    // Find the states list container by looking for the scrollable div with states
+    const allIndiaElement = screen.getByText('ALL India');
+    const statesContainer = allIndiaElement.closest('label')?.parentElement;
+    expect(statesContainer).toHaveClass('max-h-[320px]');
+    expect(statesContainer).toHaveClass('overflow-y-auto');
+  });
+});
+
+describe('Dimension Switching - Keep Last Selected', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('keeps last selected state when switching comparison to categories', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ALL India')).toBeInTheDocument();
+    });
+
+    // Select Delhi as second state (states become comparison dimension)
+    const delhiLabel = screen.getByText('Delhi').closest('label');
+    if (delhiLabel) {
+      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Verify states is comparing
+      expect(screen.getByText('Comparing')).toBeInTheDocument();
+    });
+
+    // Now select a second category to switch comparison dimension
+    const foodLabel = screen.getByText('Food and beverages').closest('label');
+    if (foodLabel) {
+      const checkbox = foodLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Should show toast about switching comparison
+      // After switch, Delhi (last selected) should be the only state selected
+      // Check that Delhi checkbox is still checked (it was selected last)
+      const delhiCheckbox = screen.getByText('Delhi').closest('label')?.querySelector('input[type="checkbox"]');
+      expect(delhiCheckbox).toBeChecked();
+
+      // ALL India should be unchecked (it was selected first)
+      const allIndiaCheckbox = screen.getByText('ALL India').closest('label')?.querySelector('input[type="checkbox"]');
+      expect(allIndiaCheckbox).not.toBeChecked();
+    });
+  });
+
+  it('keeps last selected category when switching comparison to sectors', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('General Index (All Groups)')).toBeInTheDocument();
+    });
+
+    // Select Food and beverages as second category
+    const foodLabel = screen.getByText('Food and beverages').closest('label');
+    if (foodLabel) {
+      const checkbox = foodLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Categories should be comparing
+      const categorySection = screen.getByText('Categories').closest('div');
+      expect(categorySection?.textContent).toContain('Comparing');
+    });
+
+    // Now select a second sector to switch comparison
+    const ruralLabel = screen.getByText('Rural').closest('label');
+    if (ruralLabel) {
+      const checkbox = ruralLabel.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        fireEvent.click(checkbox);
+      }
+    }
+
+    await waitFor(() => {
+      // Food and beverages (last selected) should remain, General Index should be unchecked
+      const foodCheckbox = screen.getByText('Food and beverages').closest('label')?.querySelector('input[type="checkbox"]');
+      expect(foodCheckbox).toBeChecked();
+
+      const generalIndexCheckbox = screen.getByText('General Index (All Groups)').closest('label')?.querySelector('input[type="checkbox"]');
+      expect(generalIndexCheckbox).not.toBeChecked();
     });
   });
 });
