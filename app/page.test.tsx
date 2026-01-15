@@ -13,6 +13,14 @@ Year,Month,State,Group,Sub Group,Description,Rural,Urban,Combined,Status,
 2013,January,Delhi,1,,Food and beverages,106.5,106.9,106.6,F,
 2013,February,Delhi,1,,General Index (All Groups),105.5,105.9,105.6,F,
 2013,February,Delhi,1,,Food and beverages,107.5,107.9,107.6,F,
+2013,January,Maharashtra,1,,General Index (All Groups),103.5,103.9,103.6,F,
+2013,January,Karnataka,1,,General Index (All Groups),102.5,102.9,102.6,F,
+2013,January,Gujarat,1,,General Index (All Groups),101.5,101.9,101.6,F,
+2013,January,Tamil Nadu,1,,General Index (All Groups),100.5,100.9,100.6,F,
+2013,January,West Bengal,1,,General Index (All Groups),99.5,99.9,99.6,F,
+2013,January,Rajasthan,1,,General Index (All Groups),98.5,98.9,98.6,F,
+2013,January,Punjab,1,,General Index (All Groups),97.5,97.9,97.6,F,
+2013,January,Kerala,1,,General Index (All Groups),96.5,96.9,96.6,F,
 2014,January,ALL India,1,,General Index (All Groups),115.5,115.9,115.6,F,
 2014,January,ALL India,1,,Food and beverages,117.5,117.9,117.6,F,`;
 
@@ -248,18 +256,18 @@ describe('Implicit Comparison Behavior', () => {
   it('shows "Comparing" badge when multiple items selected in a dimension', async () => {
     render(<Home />);
 
+    // Wait for Delhi to appear in the list
     await waitFor(() => {
-      expect(screen.getByText('ALL India')).toBeInTheDocument();
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
     });
 
-    // Find and click Delhi checkbox to add a second state
-    const delhiLabel = screen.getByText('Delhi').closest('label');
-    if (delhiLabel) {
-      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        fireEvent.click(checkbox);
-      }
-    }
+    // Find and click Delhi checkbox to add a second state (in unselected list)
+    const checkboxes = screen.getAllByRole('checkbox');
+    const delhiCheckbox = checkboxes.find(cb =>
+      cb.closest('label')?.textContent?.includes('Delhi')
+    );
+    expect(delhiCheckbox).toBeTruthy();
+    fireEvent.click(delhiCheckbox!);
 
     await waitFor(() => {
       // Should show "Comparing" badge for states dimension
@@ -270,18 +278,18 @@ describe('Implicit Comparison Behavior', () => {
   it('allows switching comparison dimension by selecting from another dimension', async () => {
     render(<Home />);
 
+    // Wait for Delhi to appear
     await waitFor(() => {
-      expect(screen.getByText('ALL India')).toBeInTheDocument();
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
     });
 
     // Select a second state to activate comparison on states
-    const delhiLabel = screen.getByText('Delhi').closest('label');
-    if (delhiLabel) {
-      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        fireEvent.click(checkbox);
-      }
-    }
+    const checkboxes = screen.getAllByRole('checkbox');
+    const delhiCheckbox = checkboxes.find(cb =>
+      cb.closest('label')?.textContent?.includes('Delhi')
+    );
+    expect(delhiCheckbox).toBeTruthy();
+    fireEvent.click(delhiCheckbox!);
 
     await waitFor(() => {
       // States should be the comparison dimension
@@ -303,28 +311,27 @@ describe('Implicit Comparison Behavior', () => {
     });
 
     // States should now have only one selected (the last one - Delhi)
+    // ALL India should NOT be in the selected section
     await waitFor(() => {
-      const allIndiaLabel = screen.getByText('ALL India').closest('label');
-      const allIndiaCheckbox = allIndiaLabel?.querySelector('input[type="checkbox"]') as HTMLInputElement;
-      expect(allIndiaCheckbox?.checked).toBe(false);
+      expect(screen.queryByRole('button', { name: /ALL India/ })).not.toBeInTheDocument();
     });
   });
 
   it('shows "Comparing <Dimension>" label above live preview when comparing', async () => {
     render(<Home />);
 
+    // Wait for Delhi to appear
     await waitFor(() => {
-      expect(screen.getByText('ALL India')).toBeInTheDocument();
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
     });
 
     // Select a second state to activate comparison
-    const delhiLabel = screen.getByText('Delhi').closest('label');
-    if (delhiLabel) {
-      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        fireEvent.click(checkbox);
-      }
-    }
+    const checkboxes = screen.getAllByRole('checkbox');
+    const delhiCheckbox = checkboxes.find(cb =>
+      cb.closest('label')?.textContent?.includes('Delhi')
+    );
+    expect(delhiCheckbox).toBeTruthy();
+    fireEvent.click(delhiCheckbox!);
 
     await waitFor(() => {
       expect(screen.getByText(/Comparing State \/ Region/)).toBeInTheDocument();
@@ -391,11 +398,103 @@ describe('UI Improvements', () => {
       expect(screen.getByText('ALL India')).toBeInTheDocument();
     });
 
-    // Find the states list container by looking for the scrollable div with states
-    const allIndiaElement = screen.getByText('ALL India');
-    const statesContainer = allIndiaElement.closest('label')?.parentElement;
-    expect(statesContainer).toHaveClass('max-h-[320px]');
-    expect(statesContainer).toHaveClass('overflow-y-auto');
+    // Find the states list container by looking for the scrollable div with max-height
+    const statesListContainer = document.querySelector('.max-h-\\[200px\\].overflow-y-auto');
+    expect(statesListContainer).toBeInTheDocument();
+  });
+});
+
+describe('State Selection UI', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('shows ALL India in selected section by default', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      // ALL India should be in the selected section (as a button with X icon)
+      const allIndiaButton = screen.getByRole('button', { name: /ALL India/ });
+      expect(allIndiaButton).toBeInTheDocument();
+    });
+  });
+
+  it('shows all states in scrollable list', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
+    });
+
+    // All states should be visible in the scrollable list (no "show more" button)
+    expect(screen.queryByText(/Show \d+ more states/)).not.toBeInTheDocument();
+  });
+
+  it('does not move states when selecting/deselecting', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
+    });
+
+    // Select Delhi
+    const delhiCheckbox = screen.getByText('Delhi').closest('label')?.querySelector('input[type="checkbox"]');
+    if (delhiCheckbox) {
+      fireEvent.click(delhiCheckbox);
+    }
+
+    await waitFor(() => {
+      // Delhi should now be in selected section as a button
+      const delhiButton = screen.getByRole('button', { name: /Delhi/ });
+      expect(delhiButton).toBeInTheDocument();
+    });
+  });
+
+  it('allows removing state by clicking X button in selected section', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
+    });
+
+    // First select Delhi
+    const delhiCheckbox = screen.getByText('Delhi').closest('label')?.querySelector('input[type="checkbox"]');
+    if (delhiCheckbox) {
+      fireEvent.click(delhiCheckbox);
+    }
+
+    await waitFor(() => {
+      // Delhi should be in selected section
+      const delhiButton = screen.getByRole('button', { name: /Delhi/ });
+      expect(delhiButton).toBeInTheDocument();
+    });
+
+    // Now click the Delhi button in selected section to remove it
+    const delhiButton = screen.getByRole('button', { name: /Delhi/ });
+    fireEvent.click(delhiButton);
+
+    await waitFor(() => {
+      // Delhi should no longer be a button (removed from selected)
+      expect(screen.queryByRole('button', { name: /Delhi/ })).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters states when search input changes', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
+    });
+
+    // Type in search
+    const searchInput = screen.getByPlaceholderText('Search states...');
+    fireEvent.change(searchInput, { target: { value: 'Del' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
+      // Other states should be filtered out
+      expect(screen.queryByText('Maharashtra')).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -407,18 +506,19 @@ describe('Dimension Switching - Keep Last Selected', () => {
   it('keeps last selected state when switching comparison to categories', async () => {
     render(<Home />);
 
+    // Wait for data to load and Delhi to appear
     await waitFor(() => {
-      expect(screen.getByText('ALL India')).toBeInTheDocument();
+      expect(screen.getByText('Delhi')).toBeInTheDocument();
     });
 
     // Select Delhi as second state (states become comparison dimension)
-    const delhiLabel = screen.getByText('Delhi').closest('label');
-    if (delhiLabel) {
-      const checkbox = delhiLabel.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        fireEvent.click(checkbox);
-      }
-    }
+    // Delhi is in the unselected states list
+    const delhiCheckboxes = screen.getAllByRole('checkbox');
+    const delhiCheckbox = delhiCheckboxes.find(cb =>
+      cb.closest('label')?.textContent?.includes('Delhi')
+    );
+    expect(delhiCheckbox).toBeTruthy();
+    fireEvent.click(delhiCheckbox!);
 
     await waitFor(() => {
       // Verify states is comparing
@@ -437,13 +537,12 @@ describe('Dimension Switching - Keep Last Selected', () => {
     await waitFor(() => {
       // Should show toast about switching comparison
       // After switch, Delhi (last selected) should be the only state selected
-      // Check that Delhi checkbox is still checked (it was selected last)
-      const delhiCheckbox = screen.getByText('Delhi').closest('label')?.querySelector('input[type="checkbox"]');
-      expect(delhiCheckbox).toBeChecked();
+      // Delhi should be in the selected section as a button
+      const delhiButton = screen.getByRole('button', { name: /Delhi/ });
+      expect(delhiButton).toBeInTheDocument();
 
-      // ALL India should be unchecked (it was selected first)
-      const allIndiaCheckbox = screen.getByText('ALL India').closest('label')?.querySelector('input[type="checkbox"]');
-      expect(allIndiaCheckbox).not.toBeChecked();
+      // ALL India should NOT be in selected section (it was deselected)
+      expect(screen.queryByRole('button', { name: /ALL India/ })).not.toBeInTheDocument();
     });
   });
 

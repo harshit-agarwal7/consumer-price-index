@@ -176,7 +176,7 @@ export default function Home() {
   const [chartData, setChartData] = useState<any[]>([]);
 
   // Multi-select states (converted from single select)
-  const [selectedStates, setSelectedStates] = useState<string[]>(['All India']);
+  const [selectedStates, setSelectedStates] = useState<string[]>(['ALL India']);
   const [states, setStates] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General Index (All Groups)']);
   const [selectedSectors, setSelectedSectors] = useState<string[]>(['Rural + Urban']);
@@ -266,8 +266,8 @@ export default function Home() {
             )).filter(s => s && s !== 'State');
 
             const sortedStates = uniqueStates.sort((a, b) => {
-              if (a === 'All India') return -1;
-              if (b === 'All India') return 1;
+              if (a === 'ALL India') return -1;
+              if (b === 'ALL India') return 1;
               return a.localeCompare(b);
             });
             setStates(sortedStates);
@@ -726,7 +726,7 @@ export default function Home() {
   const cancelEditing = () => {
     setEditingChartId(null);
     // Reset to defaults
-    setSelectedStates(['All India']);
+    setSelectedStates(['ALL India']);
     setSelectedCategories(['General Index (All Groups)']);
     setSelectedSectors(['Rural + Urban']);
     setMultiSelectDimension(null);
@@ -880,7 +880,7 @@ export default function Home() {
 
   // Reset functions for each dimension
   const resetStates = () => {
-    setSelectedStates(['All India']);
+    setSelectedStates(['ALL India']);
     if (multiSelectDimension === 'states') {
       setMultiSelectDimension(null);
     }
@@ -901,7 +901,7 @@ export default function Home() {
   };
 
   const resetAllDimensions = () => {
-    setSelectedStates(['All India']);
+    setSelectedStates(['ALL India']);
     setSelectedCategories(['General Index (All Groups)']);
     setSelectedSectors(['Rural + Urban']);
     setMultiSelectDimension(null);
@@ -1017,47 +1017,68 @@ export default function Home() {
                 />
               </div>
 
-              {/* States list - inline like Categories with max height for scrollability */}
-              <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
+              {/* Selected states section */}
+              {selectedStates.length > 0 && (
+                <div className="mb-3 pb-3 border-b border-slate-600/50">
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedStates.map((state) => {
+                      const stateIndex = states.indexOf(state);
+                      return (
+                        <button
+                          key={state}
+                          onClick={() => toggleState(state)}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-cyan-600/20 border border-cyan-500/30 rounded-md text-sm text-cyan-300 hover:bg-cyan-600/30 transition-colors cursor-pointer"
+                        >
+                          {multiSelectDimension === 'states' && (
+                            <span
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
+                            ></span>
+                          )}
+                          <span className="truncate max-w-[120px]">{state}</span>
+                          <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* States list - sorted alphabetically with ALL India first */}
+              <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
                 {filteredStates
+                  .filter(state => !selectedStates.includes(state))
                   .sort((a, b) => {
-                    const aSelected = selectedStates.includes(a);
-                    const bSelected = selectedStates.includes(b);
-                    if (aSelected && !bSelected) return -1;
-                    if (!aSelected && bSelected) return 1;
-                    if (a === 'All India') return -1;
-                    if (b === 'All India') return 1;
+                    if (a === 'ALL India') return -1;
+                    if (b === 'ALL India') return 1;
                     return a.localeCompare(b);
                   })
                   .map((state) => {
-                  const isSelected = selectedStates.includes(state);
-                  const stateIndex = states.indexOf(state);
+                    const stateIndex = states.indexOf(state);
 
-                  return (
-                    <label
-                      key={state}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? 'bg-cyan-600/20 border border-cyan-500/30'
-                          : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleState(state)}
-                        className="w-4 h-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 bg-slate-700"
-                      />
-                      <span className="text-sm text-slate-300 leading-tight truncate">{state}</span>
-                      {isSelected && multiSelectDimension === 'states' && (
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0 ml-auto"
-                          style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
-                        ></span>
-                      )}
-                    </label>
-                  );
-                })}
+                    return (
+                      <label
+                        key={state}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 bg-slate-700/30 border border-transparent hover:bg-slate-700/50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          onChange={() => toggleState(state)}
+                          className="w-4 h-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 bg-slate-700"
+                        />
+                        <span className="text-sm text-slate-300 leading-tight truncate">{state}</span>
+                        {multiSelectDimension === 'states' && (
+                          <span
+                            className="w-3 h-3 rounded-full flex-shrink-0 ml-auto opacity-30"
+                            style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
+                          ></span>
+                        )}
+                      </label>
+                    );
+                  })}
               </div>
             </div>
 
