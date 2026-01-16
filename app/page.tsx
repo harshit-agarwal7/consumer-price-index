@@ -473,7 +473,7 @@ export default function Home() {
 
   // Get dimension display name
   const getDimensionDisplayName = (dim: 'states' | 'categories' | 'sectors' | null): string => {
-    if (dim === 'states') return 'State / Region';
+    if (dim === 'states') return 'State';
     if (dim === 'categories') return 'Categories';
     if (dim === 'sectors') return 'Sectors';
     return '';
@@ -623,6 +623,32 @@ export default function Home() {
   const filteredStates = states.filter(state =>
     state.toLowerCase().includes(stateSearch.toLowerCase())
   );
+
+  // Detect Housing data limitation
+  // Housing category only has Urban data for individual states (no Rural, no Combined)
+  // Combined data only exists for ALL India
+  const getHousingDataWarning = (
+    chartStates: string[],
+    chartCategories: string[],
+    chartSectors: string[]
+  ): string | null => {
+    const hasHousing = chartCategories.includes('Housing');
+    const hasCombinedSector = chartSectors.includes('Rural + Urban');
+    const hasRuralSector = chartSectors.includes('Rural');
+    const hasIndividualStates = chartStates.some(s => s !== 'ALL India');
+
+    if (hasHousing && hasIndividualStates) {
+      if (hasCombinedSector && !chartSectors.includes('Urban')) {
+        return 'Housing data for individual states is only available for Urban areas. Select "Urban" sector to see the data.';
+      }
+      if (hasRuralSector && !chartSectors.includes('Urban')) {
+        return 'Housing data is not available for Rural areas. Select "Urban" sector to see the data.';
+      }
+    }
+    return null;
+  };
+
+  const housingWarning = getHousingDataWarning(selectedStates, selectedCategories, selectedSectors);
 
   // Check if an end month should be disabled (end date < start date)
   const isEndMonthDisabled = (month: string): boolean => {
@@ -876,7 +902,7 @@ export default function Home() {
   // Get section header text for each dimension
   const getSectionHeader = (dimension: 'states' | 'categories' | 'sectors'): { title: string } => {
     const baseTitles = {
-      states: 'State / Region',
+      states: 'State',
       categories: 'Categories',
       sectors: 'Sectors'
     };
@@ -945,11 +971,10 @@ export default function Home() {
         {/* Main Content - Filters and Chart side by side */}
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6 mb-6 md:mb-8">
           {/* Filters Panel */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl lg:w-[460px] flex-shrink-0">
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl lg:w-[560px] flex-shrink-0 self-center">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
 
-            {/* Column 1: State + Sectors */}
-            <div className="flex flex-col gap-4">
+            {/* Row 1: State/Region + Categories */}
             {/* State / Region Selection */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-2">
@@ -957,7 +982,7 @@ export default function Home() {
                   {getSectionHeader('states').title}
                 </h2>
                 {multiSelectDimension === 'states' && (
-                  <span className="text-sm font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
                     Comparing
                   </span>
                 )}
@@ -969,35 +994,6 @@ export default function Home() {
                   Reset
                 </button>
               </div>
-
-              {/* Selected states section */}
-              {selectedStates.length > 0 && (
-                <div className="mb-3 pb-3 border-b border-slate-600/50">
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedStates.map((state) => {
-                      const stateIndex = states.indexOf(state);
-                      return (
-                        <button
-                          key={state}
-                          onClick={() => toggleState(state)}
-                          className="flex items-center gap-1.5 px-2 py-1 bg-cyan-600/20 border border-cyan-500/30 rounded-md text-xs text-cyan-300 hover:bg-cyan-600/30 transition-colors cursor-pointer"
-                        >
-                          {multiSelectDimension === 'states' && (
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
-                            ></span>
-                          )}
-                          <span className="truncate max-w-[100px]">{state}</span>
-                          <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Search input for states */}
               <div ref={stateDropdownRef}>
@@ -1011,7 +1007,7 @@ export default function Home() {
               </div>
 
               {/* States list - sorted alphabetically with ALL India first */}
-              <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-1.5 max-h-[248px] overflow-y-auto pr-1 scrollbar-thin">
                 {filteredStates
                   .sort((a, b) => {
                     if (a === 'ALL India') return -1;
@@ -1035,8 +1031,19 @@ export default function Home() {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleState(state)}
-                          className="w-4 h-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 bg-slate-700"
+                          className="sr-only"
                         />
+                        <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isSelected
+                            ? 'bg-cyan-500'
+                            : 'bg-slate-600/50 border border-slate-500'
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
                         <span className="text-sm text-slate-300 leading-tight truncate">{state}</span>
                         {multiSelectDimension === 'states' && (
                           <span
@@ -1050,60 +1057,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Sector Selection */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                  {getSectionHeader('sectors').title}
-                </h2>
-                {multiSelectDimension === 'sectors' && (
-                  <span className="text-sm font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
-                    Comparing
-                  </span>
-                )}
-                <button
-                  onClick={resetSectors}
-                  className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                  title="Reset to default"
-                >
-                  Reset
-                </button>
-              </div>
-              <div className="space-y-2">
-                {SECTORS.map((sector) => {
-                  const isSelected = selectedSectors.includes(sector);
-
-                  return (
-                    <label
-                      key={sector}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? 'bg-green-600/20 border border-green-500/30'
-                          : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSector(sector)}
-                        className="w-4 h-4 rounded border-slate-500 text-green-500 focus:ring-green-500/50 focus:ring-offset-0 bg-slate-700"
-                      />
-                      <span className="text-sm font-medium text-slate-300">{sector}</span>
-                      {isSelected && multiSelectDimension === 'sectors' && (
-                        <span
-                          className="w-3 h-3 rounded-full ml-auto"
-                          style={{ backgroundColor: SECTOR_COLORS[sector] }}
-                        ></span>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-            </div>
-
-            {/* Column 2: Categories + Date Range */}
-            <div className="flex flex-col gap-4">
             {/* Categories Selection */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-2">
@@ -1111,7 +1064,7 @@ export default function Home() {
                   {getSectionHeader('categories').title}
                 </h2>
                 {multiSelectDimension === 'categories' && (
-                  <span className="text-sm font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
                     Comparing
                   </span>
                 )}
@@ -1140,13 +1093,86 @@ export default function Home() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleCategory(category)}
-                        className="w-4 h-4 rounded border-slate-500 text-blue-500 focus:ring-blue-500/50 focus:ring-offset-0 bg-slate-700"
+                        className="sr-only"
                       />
+                      <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-blue-500'
+                          : 'bg-slate-600/50 border border-slate-500'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
                       <span className="text-sm text-slate-300 leading-tight truncate">{getCategoryDisplayName(category)}</span>
                       {isSelected && multiSelectDimension === 'categories' && (
                         <span
                           className="w-3 h-3 rounded-full flex-shrink-0 ml-auto"
                           style={{ backgroundColor: CATEGORY_COLORS[category] }}
+                        ></span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sector Selection */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                  {getSectionHeader('sectors').title}
+                </h2>
+                {multiSelectDimension === 'sectors' && (
+                  <span className="text-xs font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
+                    Comparing
+                  </span>
+                )}
+                <button
+                  onClick={resetSectors}
+                  className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  title="Reset to default"
+                >
+                  Reset
+                </button>
+              </div>
+              <div className="space-y-2">
+                {SECTORS.map((sector) => {
+                  const isSelected = selectedSectors.includes(sector);
+
+                  return (
+                    <label
+                      key={sector}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 ${
+                        isSelected
+                          ? 'bg-green-600/20 border border-green-500/30'
+                          : 'bg-slate-700/30 border border-transparent hover:bg-slate-700/50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSector(sector)}
+                        className="sr-only"
+                      />
+                      <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-green-500'
+                          : 'bg-slate-600/50 border border-slate-500'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium text-slate-300">{sector}</span>
+                      {isSelected && multiSelectDimension === 'sectors' && (
+                        <span
+                          className="w-3 h-3 rounded-full ml-auto"
+                          style={{ backgroundColor: SECTOR_COLORS[sector] }}
                         ></span>
                       )}
                     </label>
@@ -1178,7 +1204,7 @@ export default function Home() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
                     From
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1235,7 +1261,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wide">
                     To
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1300,7 +1326,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
             </div>
 
             </div>
@@ -1367,16 +1392,22 @@ export default function Home() {
             </div>
           </div>
 
-          {hasNoData ? (
+          {hasNoData || housingWarning ? (
             <div className="flex items-center justify-center h-[400px] md:h-[500px]">
-              <div className="text-center px-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-700/50 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+              <div className="text-center px-4 max-w-md">
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${housingWarning ? 'bg-amber-600/20' : 'bg-slate-700/50'}`}>
+                  {housingWarning ? (
+                    <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  )}
                 </div>
-                <p className="text-slate-400 text-sm md:text-base">
-                  There is no data published for the selected state and category during this time period.
+                <p className={`text-sm md:text-base ${housingWarning ? 'text-amber-300' : 'text-slate-400'}`}>
+                  {housingWarning || 'There is no data published for the selected state and category during this time period.'}
                 </p>
               </div>
             </div>
@@ -1458,6 +1489,11 @@ export default function Home() {
                   chart.endMonth,
                   chart.endYear
                 );
+                const chartHousingWarning = getHousingDataWarning(
+                  chart.selectedStates,
+                  chart.selectedCategories,
+                  chart.selectedSectors
+                );
 
                 return (
                   <div
@@ -1511,9 +1547,11 @@ export default function Home() {
                     </div>
 
                     {/* Chart */}
-                    {chartResult.hasNoData ? (
+                    {chartResult.hasNoData || chartHousingWarning ? (
                       <div className="flex items-center justify-center h-48 bg-slate-800/30 rounded-lg">
-                        <p className="text-slate-500 text-sm">No data available</p>
+                        <p className={`text-sm text-center px-4 ${chartHousingWarning ? 'text-amber-400' : 'text-slate-500'}`}>
+                          {chartHousingWarning || 'No data available'}
+                        </p>
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={250}>
