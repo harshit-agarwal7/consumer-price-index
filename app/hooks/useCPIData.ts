@@ -6,7 +6,6 @@ import { CPIData } from '../types';
 
 interface UseCPIDataReturn {
   cpiData: CPIData[];
-  states: string[];
   availableYears: string[];
   initialDateRange: {
     startMonth: string;
@@ -19,7 +18,6 @@ interface UseCPIDataReturn {
 
 export const useCPIData = (): UseCPIDataReturn => {
   const [cpiData, setCpiData] = useState<CPIData[]>([]);
-  const [states, setStates] = useState<string[]>([]);
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [initialDateRange, setInitialDateRange] = useState<UseCPIDataReturn['initialDateRange']>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +45,6 @@ export const useCPIData = (): UseCPIDataReturn => {
               if (b === 'ALL India') return 1;
               return a.localeCompare(b);
             });
-            setStates(sortedStates);
 
             const uniqueYears = Array.from(new Set(
               parsedData.map(row => row.Year)
@@ -84,5 +81,5 @@ export const useCPIData = (): UseCPIDataReturn => {
       });
   }, []);
 
-  return { cpiData, states, availableYears, initialDateRange, isLoading };
+  return { cpiData, availableYears, initialDateRange, isLoading };
 };

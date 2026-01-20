@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChartDefinition } from './types';
 import { useCPIData, useChartBoard, useMultiSelect } from './hooks';
+import { STATES } from './constants';
 import { generateChartData, generateChartTitle, generateChartSubtitle, getHousingDataWarning, compareDates } from './utils';
 import {
   ToastContainer,
@@ -17,7 +18,7 @@ import {
 
 export default function Home() {
   // Data fetching
-  const { cpiData, states, availableYears, initialDateRange, isLoading } = useCPIData();
+  const { cpiData, availableYears, initialDateRange, isLoading } = useCPIData();
 
   // Chart board management
   const { chartBoard, addChart, updateChart, removeChart, duplicateChart } = useChartBoard();
@@ -210,7 +211,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               {/* State Filter */}
               <StateFilter
-                states={states}
+                states={STATES}
                 selectedStates={selectedStates}
                 multiSelectDimension={multiSelectDimension}
                 stateSearch={stateSearch}
@@ -274,7 +275,7 @@ export default function Home() {
             selectedCategories={selectedCategories}
             selectedSectors={selectedSectors}
             multiSelectDimension={multiSelectDimension}
-            allStates={states}
+            allStates={STATES}
             startMonth={startMonth}
             startYear={startYear}
             endMonth={endMonth}
@@ -291,7 +292,7 @@ export default function Home() {
         <ChartBoard
           chartBoard={chartBoard}
           cpiData={cpiData}
-          allStates={states}
+          allStates={STATES}
           editingChartId={editingChartId}
           onEditChart={handleEditChart}
           onDuplicateChart={duplicateChart}
