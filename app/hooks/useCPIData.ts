@@ -28,16 +28,14 @@ export const useCPIData = (): UseCPIDataReturn => {
     fetch('/CPIndex_Jan13-To-Nov25.csv')
       .then(response => response.text())
       .then(csvText => {
-        const lines = csvText.split('\n');
-        const csvWithoutFirstLine = lines.slice(1).join('\n');
 
-        Papa.parse(csvWithoutFirstLine, {
+        Papa.parse<CPIData>(csvText, {
           header: true,
           skipEmptyLines: true,
           complete: (result) => {
-            const parsedData = result.data.filter((row: any) =>
+            const parsedData = result.data.filter((row) =>
               row.Year && row.State && row.Description && !isNaN(parseInt(row.Year))
-            ) as CPIData[];
+            );
             setCpiData(parsedData);
 
             const uniqueStates = Array.from(new Set(
