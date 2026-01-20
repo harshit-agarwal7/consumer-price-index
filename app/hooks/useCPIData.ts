@@ -36,16 +36,6 @@ export const useCPIData = (): UseCPIDataReturn => {
             );
             setCpiData(parsedData);
 
-            const uniqueStates = Array.from(new Set(
-              parsedData.map(row => row.State)
-            )).filter(s => s && s !== 'State');
-
-            const sortedStates = uniqueStates.sort((a, b) => {
-              if (a === 'ALL India') return -1;
-              if (b === 'ALL India') return 1;
-              return a.localeCompare(b);
-            });
-
             const uniqueYears = Array.from(new Set(
               parsedData.map(row => row.Year)
             )).filter(y => y && !isNaN(parseInt(y))).sort();
