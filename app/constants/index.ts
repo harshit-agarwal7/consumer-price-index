@@ -1,10 +1,10 @@
-export const SECTOR_COLORS: { [key: string]: string } = {
+export const SECTOR_COLORS = {
   'Rural': '#3b82f6',
   'Urban': '#10b981',
   'Rural + Urban': '#f59e0b'
 };
 
-export const CATEGORY_COLORS: { [key: string]: string } = {
+export const CATEGORY_COLORS = {
   'General Index (All Groups)': '#8b5cf6',
   'Food and beverages': '#ec4899',
   'Clothing and footwear': '#14b8a6',
@@ -24,7 +24,7 @@ export const STATE_COLORS = [
   '#ca8a04', '#e11d48', '#15803d', '#7c2d12', '#4338ca'
 ];
 
-export const SECTOR_MAP: { [key: string]: string } = {
+export const SECTOR_MAP = {
   'Rural': 'Rural',
   'Urban': 'Urban',
   'Rural + Urban': 'Combined'
@@ -42,12 +42,12 @@ export const CATEGORIES = [
 
 export const SECTORS = ['Rural', 'Urban', 'Rural + Urban'];
 
-export const CATEGORY_DISPLAY_NAMES: { [key: string]: string } = {
+export const CATEGORY_DISPLAY_NAMES = {
   'Pan; tobacco; and intoxicants': 'Pan, tobacco, intoxicants',
   'General Index (All Groups)': 'General Index'
 };
 
-export const STATE_DISPLAY_NAMES: { [key: string]: string } = {
+export const STATE_DISPLAY_NAMES = {
   'ALL India': 'All India'
 };
 
