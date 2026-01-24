@@ -1,3 +1,11 @@
+/**
+ * ChartBoard.tsx
+ *
+ * Renders the dashboard section that displays
+ * user-created CPI charts and handles chart-level actions
+ * such as edit, duplicate, and delete.
+ */
+
 'use client';
 
 import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
