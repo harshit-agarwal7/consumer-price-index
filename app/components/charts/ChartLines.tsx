@@ -2,32 +2,37 @@
 
 import { ReactElement } from 'react';
 import { Line } from 'recharts';
-import { MultiSelectDimension } from '../../types';
+import { MultiSelectDimension, Selections } from '../../types';
 import { STATE_COLORS, CATEGORY_COLORS, SECTOR_COLORS } from '../../constants';
+
+const getCategoryColor = (category: string): string => {
+  return (CATEGORY_COLORS as Record<string, string>)[category] || '#8b5cf6';
+};
+
+const getSectorColor = (sector: string): string => {
+  return (SECTOR_COLORS as Record<string, string>)[sector] || '#3b82f6';
+};
 import { getStateDisplayName, getCategoryDisplayName } from '../../utils';
 
 interface RenderChartLinesProps {
-  chartStates: string[];
-  chartCategories: string[];
-  chartSectors: string[];
+  selections: Selections;
   dimension: MultiSelectDimension;
   allStates: string[];
 }
 
 export const renderChartLines = ({
-  chartStates,
-  chartCategories,
-  chartSectors,
+  selections,
   dimension,
   allStates
 }: RenderChartLinesProps): ReactElement[] => {
+  const { states, categories, sectors } = selections;
   const lines: ReactElement[] = [];
 
   if (dimension === 'states') {
-    chartStates.forEach((state) => {
+    states.forEach((state) => {
       const stateIndex = allStates.indexOf(state);
-      const colorIndex = stateIndex >= 0 ? stateIndex : chartStates.indexOf(state);
-      const key = `${state}_${chartSectors[0]}_${chartCategories[0]}`;
+      const colorIndex = stateIndex >= 0 ? stateIndex : states.indexOf(state);
+      const key = `${state}_${sectors[0]}_${categories[0]}`;
       lines.push(
         <Line
           key={key}
@@ -43,15 +48,15 @@ export const renderChartLines = ({
       );
     });
   } else if (dimension === 'categories') {
-    chartCategories.forEach(category => {
-      const key = `${chartStates[0]}_${chartSectors[0]}_${category}`;
+    categories.forEach(category => {
+      const key = `${states[0]}_${sectors[0]}_${category}`;
       lines.push(
         <Line
           key={key}
           type="monotone"
           dataKey={key}
           name={category}
-          stroke={CATEGORY_COLORS[category] || '#8b5cf6'}
+          stroke={getCategoryColor(category)}
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 5, strokeWidth: 0 }}
@@ -60,15 +65,15 @@ export const renderChartLines = ({
       );
     });
   } else if (dimension === 'sectors') {
-    chartSectors.forEach(sector => {
-      const key = `${chartStates[0]}_${sector}_${chartCategories[0]}`;
+    sectors.forEach(sector => {
+      const key = `${states[0]}_${sector}_${categories[0]}`;
       lines.push(
         <Line
           key={key}
           type="monotone"
           dataKey={key}
           name={sector}
-          stroke={SECTOR_COLORS[sector]}
+          stroke={getSectorColor(sector)}
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 5, strokeWidth: 0 }}
@@ -77,14 +82,14 @@ export const renderChartLines = ({
       );
     });
   } else {
-    const key = `${chartStates[0]}_${chartSectors[0]}_${chartCategories[0]}`;
+    const key = `${states[0]}_${sectors[0]}_${categories[0]}`;
     lines.push(
       <Line
         key={key}
         type="monotone"
         dataKey={key}
-        name={`${getStateDisplayName(chartStates[0])} - ${getCategoryDisplayName(chartCategories[0])} - ${chartSectors[0]}`}
-        stroke={CATEGORY_COLORS[chartCategories[0]] || '#8b5cf6'}
+        name={`${getStateDisplayName(states[0])} - ${getCategoryDisplayName(categories[0])} - ${sectors[0]}`}
+        stroke={getCategoryColor(categories[0])}
         strokeWidth={2}
         dot={false}
         activeDot={{ r: 5, strokeWidth: 0 }}

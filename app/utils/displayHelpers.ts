@@ -1,11 +1,11 @@
 import { STATE_DISPLAY_NAMES, CATEGORY_DISPLAY_NAMES } from '../constants';
 
 export const getStateDisplayName = (state: string): string => {
-  return STATE_DISPLAY_NAMES[state] || state;
+  return (STATE_DISPLAY_NAMES as Record<string, string>)[state] || state;
 };
 
 export const getCategoryDisplayName = (category: string): string => {
-  return CATEGORY_DISPLAY_NAMES[category] || category;
+  return (CATEGORY_DISPLAY_NAMES as Record<string, string>)[category] || category;
 };
 
 export const getDimensionDisplayName = (dim: 'states' | 'categories' | 'sectors' | null): string => {

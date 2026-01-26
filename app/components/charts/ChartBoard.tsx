@@ -73,21 +73,8 @@ export const ChartBoard = ({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {chartBoard.map(chart => {
-            const chartResult = generateChartData(
-              cpiData,
-              chart.selectedStates,
-              chart.selectedCategories,
-              chart.selectedSectors,
-              chart.startMonth,
-              chart.startYear,
-              chart.endMonth,
-              chart.endYear
-            );
-            const chartHousingWarning = getHousingDataWarning(
-              chart.selectedStates,
-              chart.selectedCategories,
-              chart.selectedSectors
-            );
+            const chartResult = generateChartData(cpiData, chart.selections, chart.dateRange);
+            const chartHousingWarning = getHousingDataWarning(chart.selections);
 
             return (
               <div
@@ -162,9 +149,7 @@ export const ChartBoard = ({
                         formatter={(value) => <span className="text-slate-300 text-sm">{value}</span>}
                       />
                       {renderChartLines({
-                        chartStates: chart.selectedStates,
-                        chartCategories: chart.selectedCategories,
-                        chartSectors: chart.selectedSectors,
+                        selections: chart.selections,
                         dimension: chart.multiSelectDimension,
                         allStates
                       })}

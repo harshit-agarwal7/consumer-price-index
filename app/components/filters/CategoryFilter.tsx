@@ -70,7 +70,7 @@ export const CategoryFilter = ({
               {isSelected && multiSelectDimension === 'categories' && (
                 <span
                   className="w-3 h-3 rounded-full flex-shrink-0 ml-auto"
-                  style={{ backgroundColor: CATEGORY_COLORS[category] }}
+                  style={{ backgroundColor: (CATEGORY_COLORS as Record<string, string>)[category] }}
                 ></span>
               )}
             </label>

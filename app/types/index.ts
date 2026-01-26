@@ -11,17 +11,25 @@ export interface CPIData {
   Status: string;
 }
 
-export interface ChartDefinition {
-  id: string;
-  title: string;
-  subtitle: string;
-  selectedStates: string[];
-  selectedCategories: string[];
-  selectedSectors: string[];
+export interface Selections {
+  states: string[];
+  categories: string[];
+  sectors: string[];
+}
+
+export interface DateRange {
   startMonth: string;
   startYear: string;
   endMonth: string;
   endYear: string;
+}
+
+export interface ChartDefinition {
+  id: string;
+  title: string;
+  subtitle: string;
+  selections: Selections;
+  dateRange: DateRange;
   multiSelectDimension: 'states' | 'categories' | 'sectors' | null;
 }
 

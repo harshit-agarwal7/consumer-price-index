@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { ChartDefinition } from './types';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { ChartDefinition, DateRange } from './types';
 import { useCPIData, useChartBoard, useMultiSelect } from './hooks';
 import { STATES } from './constants';
 import { generateChartData, generateChartTitle, generateChartSubtitle, getHousingDataWarning, compareDates } from './utils';
@@ -25,6 +25,7 @@ export default function Home() {
 
   // Multi-select filter management
   const {
+    selections,
     selectedStates,
     selectedCategories,
     selectedSectors,
@@ -41,6 +42,14 @@ export default function Home() {
   const [startYear, setStartYear] = useState<string>('');
   const [endMonth, setEndMonth] = useState<string>('');
   const [endYear, setEndYear] = useState<string>('');
+
+  // Derived date range object
+  const dateRange = useMemo<DateRange>(() => ({
+    startMonth,
+    startYear,
+    endMonth,
+    endYear,
+  }), [startMonth, startYear, endMonth, endYear]);
 
   // UI state
   const [stateSearch, setStateSearch] = useState<string>('');
@@ -83,36 +92,26 @@ export default function Home() {
 
   // Transform data for live preview chart
   useEffect(() => {
-    const result = generateChartData(
-      cpiData,
-      selectedStates,
-      selectedCategories,
-      selectedSectors,
-      startMonth,
-      startYear,
-      endMonth,
-      endYear
-    );
+    const result = generateChartData(cpiData, selections, dateRange);
     setChartData(result.chartData);
     setHasNoData(result.hasNoData);
-  }, [cpiData, selectedStates, selectedCategories, selectedSectors, startMonth, startYear, endMonth, endYear]);
+  }, [cpiData, selections, dateRange]);
 
   // Housing warning
-  const housingWarning = getHousingDataWarning(selectedStates, selectedCategories, selectedSectors);
+  const housingWarning = getHousingDataWarning(selections);
 
   // Add chart to board
   const handleAddChart = () => {
     const newChart: ChartDefinition = {
       id: Date.now().toString(),
-      title: generateChartTitle(selectedStates, selectedCategories, selectedSectors, multiSelectDimension, startMonth, startYear, endMonth, endYear),
-      subtitle: generateChartSubtitle(selectedStates, selectedCategories, selectedSectors),
-      selectedStates: [...selectedStates],
-      selectedCategories: [...selectedCategories],
-      selectedSectors: [...selectedSectors],
-      startMonth,
-      startYear,
-      endMonth,
-      endYear,
+      title: generateChartTitle(selections, multiSelectDimension, dateRange),
+      subtitle: generateChartSubtitle(selections),
+      selections: {
+        states: [...selectedStates],
+        categories: [...selectedCategories],
+        sectors: [...selectedSectors],
+      },
+      dateRange: { ...dateRange },
       multiSelectDimension
     };
     addChart(newChart);
@@ -123,15 +122,14 @@ export default function Home() {
     if (!editingChartId) return;
 
     updateChart(editingChartId, {
-      title: generateChartTitle(selectedStates, selectedCategories, selectedSectors, multiSelectDimension, startMonth, startYear, endMonth, endYear),
-      subtitle: generateChartSubtitle(selectedStates, selectedCategories, selectedSectors),
-      selectedStates: [...selectedStates],
-      selectedCategories: [...selectedCategories],
-      selectedSectors: [...selectedSectors],
-      startMonth,
-      startYear,
-      endMonth,
-      endYear,
+      title: generateChartTitle(selections, multiSelectDimension, dateRange),
+      subtitle: generateChartSubtitle(selections),
+      selections: {
+        states: [...selectedStates],
+        categories: [...selectedCategories],
+        sectors: [...selectedSectors],
+      },
+      dateRange: { ...dateRange },
       multiSelectDimension
     });
 
@@ -146,13 +144,13 @@ export default function Home() {
 
   // Edit a chart
   const handleEditChart = (chart: ChartDefinition) => {
-    setSelected('states', chart.selectedStates);
-    setSelected('categories', chart.selectedCategories);
-    setSelected('sectors', chart.selectedSectors);
-    setStartMonth(chart.startMonth);
-    setStartYear(chart.startYear);
-    setEndMonth(chart.endMonth);
-    setEndYear(chart.endYear);
+    setSelected('states', chart.selections.states);
+    setSelected('categories', chart.selections.categories);
+    setSelected('sectors', chart.selections.sectors);
+    setStartMonth(chart.dateRange.startMonth);
+    setStartYear(chart.dateRange.startYear);
+    setEndMonth(chart.dateRange.endMonth);
+    setEndYear(chart.dateRange.endYear);
     setMultiSelectDimension(chart.multiSelectDimension);
     setEditingChartId(chart.id);
 
@@ -264,15 +262,10 @@ export default function Home() {
             hasNoData={hasNoData}
             housingWarning={housingWarning}
             isMobile={isMobile}
-            selectedStates={selectedStates}
-            selectedCategories={selectedCategories}
-            selectedSectors={selectedSectors}
+            selections={selections}
             multiSelectDimension={multiSelectDimension}
             allStates={STATES}
-            startMonth={startMonth}
-            startYear={startYear}
-            endMonth={endMonth}
-            endYear={endYear}
+            dateRange={dateRange}
             editingChartId={editingChartId}
             chartPreviewRef={chartPreviewRef}
             onAddChart={handleAddChart}

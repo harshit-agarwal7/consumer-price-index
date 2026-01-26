@@ -1,8 +1,8 @@
 'use client';
 
 import { RefObject } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { MultiSelectDimension } from '../../types';
+import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { DateRange, MultiSelectDimension, Selections } from '../../types';
 import { CustomTooltip } from '../CustomTooltip';
 import { renderChartLines } from './ChartLines';
 import { generateChartTitle } from '../../utils';
@@ -12,15 +12,10 @@ interface LivePreviewChartProps {
   hasNoData: boolean;
   housingWarning: string | null;
   isMobile: boolean;
-  selectedStates: string[];
-  selectedCategories: string[];
-  selectedSectors: string[];
+  selections: Selections;
   multiSelectDimension: MultiSelectDimension;
   allStates: string[];
-  startMonth: string;
-  startYear: string;
-  endMonth: string;
-  endYear: string;
+  dateRange: DateRange;
   editingChartId: string | null;
   chartPreviewRef: RefObject<HTMLDivElement | null>;
   onAddChart: () => void;
@@ -33,15 +28,10 @@ export const LivePreviewChart = ({
   hasNoData,
   housingWarning,
   isMobile,
-  selectedStates,
-  selectedCategories,
-  selectedSectors,
+  selections,
   multiSelectDimension,
   allStates,
-  startMonth,
-  startYear,
-  endMonth,
-  endYear,
+  dateRange,
   editingChartId,
   chartPreviewRef,
   onAddChart,
@@ -133,16 +123,14 @@ export const LivePreviewChart = ({
                 formatter={(value) => <span className="text-slate-300 text-sm md:text-sm">{value}</span>}
               />
               {renderChartLines({
-                chartStates: selectedStates,
-                chartCategories: selectedCategories,
-                chartSectors: selectedSectors,
+                selections,
                 dimension: multiSelectDimension,
                 allStates
               })}
             </LineChart>
           </ResponsiveContainer>
           <p className="text-sm text-slate-400 text-center">
-            {generateChartTitle(selectedStates, selectedCategories, selectedSectors, multiSelectDimension, startMonth, startYear, endMonth, endYear)}
+            {generateChartTitle(selections, multiSelectDimension, dateRange)}
           </p>
         </div>
       )}

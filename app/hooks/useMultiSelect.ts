@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { MultiSelectDimension, ToastMessage } from '../types';
+import { useState, useCallback, useMemo } from 'react';
+import { MultiSelectDimension, Selections, ToastMessage } from '../types';
 
 export type DimensionKey = 'states' | 'categories' | 'sectors';
 
@@ -20,6 +20,7 @@ const DIMENSION_TOAST_MESSAGES: Record<DimensionKey, string> = {
 };
 
 interface UseMultiSelectReturn {
+  selections: Selections;
   selectedStates: string[];
   selectedCategories: string[];
   selectedSectors: string[];
@@ -143,7 +144,15 @@ export const useMultiSelect = (): UseMultiSelectReturn => {
     setter(items);
   }, [getDimensionState]);
 
+  // Derived selections object for convenience
+  const selections = useMemo<Selections>(() => ({
+    states: selectedStates,
+    categories: selectedCategories,
+    sectors: selectedSectors,
+  }), [selectedStates, selectedCategories, selectedSectors]);
+
   return {
+    selections,
     selectedStates,
     selectedCategories,
     selectedSectors,

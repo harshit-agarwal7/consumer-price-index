@@ -35,7 +35,8 @@ export const useCPIData = (): UseCPIDataReturn => {
               row.Year && row.State && row.Description && !isNaN(parseInt(row.Year))
             );
             setCpiData(parsedData);
-
+            
+            // Getting array of unique years from the data because more data will be added to the file over time.
             const uniqueYears = Array.from(new Set(
               parsedData.map(row => row.Year)
             )).filter(y => y && !isNaN(parseInt(y))).sort();

@@ -70,7 +70,7 @@ export const SectorFilter = ({
               {isSelected && multiSelectDimension === 'sectors' && (
                 <span
                   className="w-3 h-3 rounded-full ml-auto"
-                  style={{ backgroundColor: SECTOR_COLORS[sector] }}
+                  style={{ backgroundColor: (SECTOR_COLORS as Record<string, string>)[sector] }}
                 ></span>
               )}
             </label>
