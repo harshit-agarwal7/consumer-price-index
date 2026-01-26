@@ -22,12 +22,12 @@ describe('useMultiSelect', () => {
     });
   });
 
-  describe('toggleState', () => {
+  describe('toggle states', () => {
     it('should add a new state to selection', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleState('Delhi');
+        result.current.toggle('states', 'Delhi');
       });
 
       expect(result.current.selectedStates).toEqual(['ALL India', 'Delhi']);
@@ -38,11 +38,11 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleState('Delhi');
+        result.current.toggle('states', 'Delhi');
       });
 
       act(() => {
-        result.current.toggleState('Delhi');
+        result.current.toggle('states', 'Delhi');
       });
 
       expect(result.current.selectedStates).toEqual(['ALL India']);
@@ -53,19 +53,19 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleState('ALL India');
+        result.current.toggle('states', 'ALL India');
       });
 
       expect(result.current.selectedStates).toEqual(['ALL India']);
     });
   });
 
-  describe('toggleCategory', () => {
+  describe('toggle categories', () => {
     it('should add a new category to selection', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       expect(result.current.selectedCategories).toEqual(['General Index (All Groups)', 'Food and beverages']);
@@ -76,11 +76,11 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       expect(result.current.selectedCategories).toEqual(['General Index (All Groups)']);
@@ -91,19 +91,19 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleCategory('General Index (All Groups)');
+        result.current.toggle('categories', 'General Index (All Groups)');
       });
 
       expect(result.current.selectedCategories).toEqual(['General Index (All Groups)']);
     });
   });
 
-  describe('toggleSector', () => {
+  describe('toggle sectors', () => {
     it('should add a new sector to selection', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleSector('Rural');
+        result.current.toggle('sectors', 'Rural');
       });
 
       expect(result.current.selectedSectors).toEqual(['Rural + Urban', 'Rural']);
@@ -114,11 +114,11 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleSector('Rural');
+        result.current.toggle('sectors', 'Rural');
       });
 
       act(() => {
-        result.current.toggleSector('Rural');
+        result.current.toggle('sectors', 'Rural');
       });
 
       expect(result.current.selectedSectors).toEqual(['Rural + Urban']);
@@ -129,7 +129,7 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleSector('Rural + Urban');
+        result.current.toggle('sectors', 'Rural + Urban');
       });
 
       expect(result.current.selectedSectors).toEqual(['Rural + Urban']);
@@ -142,10 +142,10 @@ describe('useMultiSelect', () => {
 
       // First select multiple states
       act(() => {
-        result.current.toggleState('Delhi');
+        result.current.toggle('states', 'Delhi');
       });
       act(() => {
-        result.current.toggleState('Maharashtra');
+        result.current.toggle('states', 'Maharashtra');
       });
 
       expect(result.current.selectedStates).toEqual(['ALL India', 'Delhi', 'Maharashtra']);
@@ -153,7 +153,7 @@ describe('useMultiSelect', () => {
 
       // Now select a second category
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       expect(result.current.multiSelectDimension).toBe('categories');
@@ -167,14 +167,14 @@ describe('useMultiSelect', () => {
 
       // First select multiple categories
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       expect(result.current.multiSelectDimension).toBe('categories');
 
       // Now select a second sector
       act(() => {
-        result.current.toggleSector('Rural');
+        result.current.toggle('sectors', 'Rural');
       });
 
       expect(result.current.multiSelectDimension).toBe('sectors');
@@ -187,12 +187,12 @@ describe('useMultiSelect', () => {
 
       // Select multiple states first
       act(() => {
-        result.current.toggleState('Delhi');
+        result.current.toggle('states', 'Delhi');
       });
 
       // Switch to categories
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       expect(result.current.toasts).toHaveLength(1);
@@ -205,12 +205,12 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleState('Delhi');
-        result.current.toggleState('Maharashtra');
+        result.current.toggle('states', 'Delhi');
+        result.current.toggle('states', 'Maharashtra');
       });
 
       act(() => {
-        result.current.resetStates();
+        result.current.reset('states');
       });
 
       expect(result.current.selectedStates).toEqual(['ALL India']);
@@ -221,11 +221,11 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       act(() => {
-        result.current.resetCategories();
+        result.current.reset('categories');
       });
 
       expect(result.current.selectedCategories).toEqual(['General Index (All Groups)']);
@@ -236,28 +236,28 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleSector('Rural');
+        result.current.toggle('sectors', 'Rural');
       });
 
       act(() => {
-        result.current.resetSectors();
+        result.current.reset('sectors');
       });
 
       expect(result.current.selectedSectors).toEqual(['Rural + Urban']);
       expect(result.current.multiSelectDimension).toBeNull();
     });
 
-    it('should reset all dimensions', () => {
+    it('should reset all dimensions when called without argument', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.toggleState('Delhi');
-        result.current.setSelectedCategories(['Food and beverages', 'Housing']);
-        result.current.setSelectedSectors(['Rural', 'Urban']);
+        result.current.toggle('states', 'Delhi');
+        result.current.setSelected('categories', ['Food and beverages', 'Housing']);
+        result.current.setSelected('sectors', ['Rural', 'Urban']);
       });
 
       act(() => {
-        result.current.resetAllDimensions();
+        result.current.reset();
       });
 
       expect(result.current.selectedStates).toEqual(['ALL India']);
@@ -267,12 +267,12 @@ describe('useMultiSelect', () => {
     });
   });
 
-  describe('direct setters', () => {
+  describe('setSelected', () => {
     it('should allow direct setting of states', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.setSelectedStates(['Delhi', 'Maharashtra']);
+        result.current.setSelected('states', ['Delhi', 'Maharashtra']);
       });
 
       expect(result.current.selectedStates).toEqual(['Delhi', 'Maharashtra']);
@@ -282,7 +282,7 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.setSelectedCategories(['Food and beverages']);
+        result.current.setSelected('categories', ['Food and beverages']);
       });
 
       expect(result.current.selectedCategories).toEqual(['Food and beverages']);
@@ -292,7 +292,7 @@ describe('useMultiSelect', () => {
       const { result } = renderHook(() => useMultiSelect());
 
       act(() => {
-        result.current.setSelectedSectors(['Rural']);
+        result.current.setSelected('sectors', ['Rural']);
       });
 
       expect(result.current.selectedSectors).toEqual(['Rural']);
@@ -315,10 +315,10 @@ describe('useMultiSelect', () => {
 
       // Select multiple states then switch to categories to trigger toast
       act(() => {
-        result.current.toggleState('Delhi');
+        result.current.toggle('states', 'Delhi');
       });
       act(() => {
-        result.current.toggleCategory('Food and beverages');
+        result.current.toggle('categories', 'Food and beverages');
       });
 
       expect(result.current.toasts).toHaveLength(1);

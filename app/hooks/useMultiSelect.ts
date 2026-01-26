@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { MultiSelectDimension, ToastMessage } from '../types';
 
-type DimensionKey = 'states' | 'categories' | 'sectors';
+export type DimensionKey = 'states' | 'categories' | 'sectors';
 
 // Default values for each dimension
 const DIMENSION_DEFAULTS: Record<DimensionKey, string> = {
@@ -25,16 +25,9 @@ interface UseMultiSelectReturn {
   selectedSectors: string[];
   multiSelectDimension: MultiSelectDimension;
   toasts: ToastMessage[];
-  toggleState: (state: string) => void;
-  toggleCategory: (category: string) => void;
-  toggleSector: (sector: string) => void;
-  resetStates: () => void;
-  resetCategories: () => void;
-  resetSectors: () => void;
-  resetAllDimensions: () => void;
-  setSelectedStates: (states: string[]) => void;
-  setSelectedCategories: (categories: string[]) => void;
-  setSelectedSectors: (sectors: string[]) => void;
+  toggle: (dimension: DimensionKey, item: string) => void;
+  reset: (dimension?: DimensionKey) => void;
+  setSelected: (dimension: DimensionKey, items: string[]) => void;
   setMultiSelectDimension: (dimension: MultiSelectDimension) => void;
 }
 
@@ -70,7 +63,7 @@ export const useMultiSelect = (): UseMultiSelectReturn => {
   }, []);
 
   // Generic toggle function for any dimension
-  const toggleDimension = useCallback((dimension: DimensionKey, item: string) => {
+  const toggle = useCallback((dimension: DimensionKey, item: string) => {
     const { selected, setSelected } = getDimensionState(dimension);
     const isSelected = selected.includes(item);
 
@@ -127,31 +120,28 @@ export const useMultiSelect = (): UseMultiSelectReturn => {
     }
   }, [getDimensionState, getOtherDimensions, multiSelectDimension, showToast]);
 
-  // Generic reset function for any dimension
-  const resetDimension = useCallback((dimension: DimensionKey) => {
-    const { setSelected } = getDimensionState(dimension);
-    setSelected([DIMENSION_DEFAULTS[dimension]]);
-    if (multiSelectDimension === dimension) {
+  // Generic reset function - resets one dimension or all if no argument
+  const reset = useCallback((dimension?: DimensionKey) => {
+    if (dimension) {
+      const { setSelected } = getDimensionState(dimension);
+      setSelected([DIMENSION_DEFAULTS[dimension]]);
+      if (multiSelectDimension === dimension) {
+        setMultiSelectDimension(null);
+      }
+    } else {
+      // Reset all dimensions
+      setSelectedStates([DIMENSION_DEFAULTS.states]);
+      setSelectedCategories([DIMENSION_DEFAULTS.categories]);
+      setSelectedSectors([DIMENSION_DEFAULTS.sectors]);
       setMultiSelectDimension(null);
     }
   }, [getDimensionState, multiSelectDimension]);
 
-  // Specific toggle handlers (for backwards compatibility)
-  const toggleState = useCallback((state: string) => toggleDimension('states', state), [toggleDimension]);
-  const toggleCategory = useCallback((category: string) => toggleDimension('categories', category), [toggleDimension]);
-  const toggleSector = useCallback((sector: string) => toggleDimension('sectors', sector), [toggleDimension]);
-
-  // Specific reset handlers (for backwards compatibility)
-  const resetStates = useCallback(() => resetDimension('states'), [resetDimension]);
-  const resetCategories = useCallback(() => resetDimension('categories'), [resetDimension]);
-  const resetSectors = useCallback(() => resetDimension('sectors'), [resetDimension]);
-
-  const resetAllDimensions = useCallback(() => {
-    setSelectedStates([DIMENSION_DEFAULTS.states]);
-    setSelectedCategories([DIMENSION_DEFAULTS.categories]);
-    setSelectedSectors([DIMENSION_DEFAULTS.sectors]);
-    setMultiSelectDimension(null);
-  }, []);
+  // Generic setter for any dimension
+  const setSelected = useCallback((dimension: DimensionKey, items: string[]) => {
+    const { setSelected: setter } = getDimensionState(dimension);
+    setter(items);
+  }, [getDimensionState]);
 
   return {
     selectedStates,
@@ -159,16 +149,9 @@ export const useMultiSelect = (): UseMultiSelectReturn => {
     selectedSectors,
     multiSelectDimension,
     toasts,
-    toggleState,
-    toggleCategory,
-    toggleSector,
-    resetStates,
-    resetCategories,
-    resetSectors,
-    resetAllDimensions,
-    setSelectedStates,
-    setSelectedCategories,
-    setSelectedSectors,
-    setMultiSelectDimension
+    toggle,
+    reset,
+    setSelected,
+    setMultiSelectDimension,
   };
 };

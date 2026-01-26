@@ -30,17 +30,10 @@ export default function Home() {
     selectedSectors,
     multiSelectDimension,
     toasts,
-    toggleState,
-    toggleCategory,
-    toggleSector,
-    resetStates,
-    resetCategories,
-    resetSectors,
-    resetAllDimensions,
-    setSelectedStates,
-    setSelectedCategories,
-    setSelectedSectors,
-    setMultiSelectDimension
+    toggle,
+    reset,
+    setSelected,
+    setMultiSelectDimension,
   } = useMultiSelect();
 
   // Date range state
@@ -148,14 +141,14 @@ export default function Home() {
   // Cancel editing
   const handleCancelEditing = () => {
     setEditingChartId(null);
-    resetAllDimensions();
+    reset();
   };
 
   // Edit a chart
   const handleEditChart = (chart: ChartDefinition) => {
-    setSelectedStates(chart.selectedStates);
-    setSelectedCategories(chart.selectedCategories);
-    setSelectedSectors(chart.selectedSectors);
+    setSelected('states', chart.selectedStates);
+    setSelected('categories', chart.selectedCategories);
+    setSelected('sectors', chart.selectedSectors);
     setStartMonth(chart.startMonth);
     setStartYear(chart.startYear);
     setEndMonth(chart.endMonth);
@@ -216,24 +209,24 @@ export default function Home() {
                 multiSelectDimension={multiSelectDimension}
                 stateSearch={stateSearch}
                 onStateSearchChange={setStateSearch}
-                onToggleState={toggleState}
-                onReset={resetStates}
+                onToggleState={(state) => toggle('states', state)}
+                onReset={() => reset('states')}
               />
 
               {/* Category Filter */}
               <CategoryFilter
                 selectedCategories={selectedCategories}
                 multiSelectDimension={multiSelectDimension}
-                onToggleCategory={toggleCategory}
-                onReset={resetCategories}
+                onToggleCategory={(category) => toggle('categories', category)}
+                onReset={() => reset('categories')}
               />
 
               {/* Sector Filter */}
               <SectorFilter
                 selectedSectors={selectedSectors}
                 multiSelectDimension={multiSelectDimension}
-                onToggleSector={toggleSector}
-                onReset={resetSectors}
+                onToggleSector={(sector) => toggle('sectors', sector)}
+                onReset={() => reset('sectors')}
               />
 
               {/* Date Range Filter */}
@@ -254,7 +247,7 @@ export default function Home() {
             {/* Reset All Filters Button */}
             <div className="mt-4 pt-4 border-t border-slate-700/50">
               <button
-                onClick={resetAllDimensions}
+                onClick={() => reset()}
                 className="px-4 py-2.5 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 text-sm font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
