@@ -237,7 +237,7 @@ export default function Home() {
         {/* Main Content - Filters and Chart side by side */}
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6 mb-6 md:mb-8">
           {/* Filters Panel - appears second on mobile, first on desktop */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl lg:w-[560px] flex-shrink-0 self-center order-2 lg:order-1">
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl lg:w-[560px] flex-shrink-0 self-center lg:self-auto order-2 lg:order-1">
             {isMobile ? (
               <MobileFilterAccordion
                 sections={[
@@ -371,7 +371,7 @@ export default function Home() {
           </div>
 
           {/* Live Preview Chart - appears first on mobile, second on desktop */}
-          <div className="order-1 lg:order-2 flex-1 min-w-0">
+          <div className="order-1 lg:order-2 flex-1 min-w-0 flex flex-col">
             <LivePreviewChart
               chartData={chartData}
               hasNoData={hasNoData}
@@ -396,6 +396,7 @@ export default function Home() {
           cpiData={cpiData}
           allStates={STATES}
           editingChartId={editingChartId}
+          isMobile={isMobile}
           onEditChart={handleEditChart}
           onDuplicateChart={handleDuplicateChart}
           onRemoveChart={handleRequestRemoveChart}

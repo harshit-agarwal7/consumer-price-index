@@ -19,6 +19,7 @@ interface ChartBoardProps {
   cpiData: CPIData[];
   allStates: string[];
   editingChartId: string | null;
+  isMobile: boolean;
   onEditChart: (chart: ChartDefinition) => void;
   onDuplicateChart: (chart: ChartDefinition) => void;
   onRemoveChart: (chartId: string) => void;
@@ -29,6 +30,7 @@ export const ChartBoard = ({
   cpiData,
   allStates,
   editingChartId,
+  isMobile,
   onEditChart,
   onDuplicateChart,
   onRemoveChart
@@ -129,7 +131,7 @@ export const ChartBoard = ({
                     </p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" aspect={1.1}>
+                  <ResponsiveContainer width="100%" aspect={isMobile ? 1.1 : 1.7}>
                     <LineChart data={chartResult.chartData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis
