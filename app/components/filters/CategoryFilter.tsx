@@ -9,33 +9,37 @@ interface CategoryFilterProps {
   multiSelectDimension: MultiSelectDimension;
   onToggleCategory: (category: string) => void;
   onReset: () => void;
+  hideHeader?: boolean;
 }
 
 export const CategoryFilter = ({
   selectedCategories,
   multiSelectDimension,
   onToggleCategory,
-  onReset
+  onReset,
+  hideHeader = false
 }: CategoryFilterProps) => {
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 mb-2">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-          {getSectionHeader('categories').title}
-        </h2>
-        {multiSelectDimension === 'categories' && (
-          <span className="text-xs font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
-            Comparing
-          </span>
-        )}
-        <button
-          onClick={onReset}
-          className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-          title="Reset to default"
-        >
-          Reset
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            {getSectionHeader('categories').title}
+          </h2>
+          {multiSelectDimension === 'categories' && (
+            <span className="text-xs font-medium bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full">
+              Comparing
+            </span>
+          )}
+          <button
+            onClick={onReset}
+            className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            title="Reset to default"
+          >
+            Reset
+          </button>
+        </div>
+      )}
       <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 scrollbar-thin">
         {CATEGORIES.map((category) => {
           const isSelected = selectedCategories.includes(category);

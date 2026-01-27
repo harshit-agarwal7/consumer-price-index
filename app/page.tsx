@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChartDefinition, DateRange } from './types';
-import { useCPIData, useChartBoard, useMultiSelect } from './hooks';
+import { useCPIData, useChartBoard, useMultiSelect, useAccordion } from './hooks';
 import { STATES } from './constants';
 import { generateChartData, generateChartTitle, generateChartSubtitle, getHousingDataWarning, compareDates } from './utils';
 import {
@@ -12,8 +12,10 @@ import {
   CategoryFilter,
   SectorFilter,
   DateRangeFilter,
+  MobileFilterAccordion,
   LivePreviewChart,
-  ChartBoard
+  ChartBoard,
+  ConfirmDialog
 } from './components';
 
 export default function Home() {
@@ -55,6 +57,8 @@ export default function Home() {
   const [stateSearch, setStateSearch] = useState<string>('');
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [editingChartId, setEditingChartId] = useState<string | null>(null);
+  const [chartToDelete, setChartToDelete] = useState<string | null>(null);
+  const [duplicateToast, setDuplicateToast] = useState<string | null>(null);
 
   // Chart data
   const [chartData, setChartData] = useState<any[]>([]);
@@ -62,6 +66,9 @@ export default function Home() {
 
   // Refs
   const chartPreviewRef = useRef<HTMLDivElement>(null);
+
+  // Mobile filter accordion state
+  const { expandedId, toggle: toggleAccordion } = useAccordion(null);
 
   // Handle window resize for responsive chart height
   useEffect(() => {
@@ -159,12 +166,44 @@ export default function Home() {
     }, 100);
   };
 
-  // Remove chart
-  const handleRemoveChart = (chartId: string) => {
-    removeChart(chartId);
-    if (editingChartId === chartId) {
-      setEditingChartId(null);
+  // Request to remove chart (shows confirmation dialog)
+  const handleRequestRemoveChart = (chartId: string) => {
+    setChartToDelete(chartId);
+  };
+
+  // Confirm remove chart
+  const handleConfirmRemoveChart = () => {
+    if (chartToDelete) {
+      removeChart(chartToDelete);
+      if (editingChartId === chartToDelete) {
+        setEditingChartId(null);
+      }
+      setChartToDelete(null);
     }
+  };
+
+  // Cancel remove chart
+  const handleCancelRemoveChart = () => {
+    setChartToDelete(null);
+  };
+
+  // Duplicate chart with notification and scroll
+  const handleDuplicateChart = (chart: ChartDefinition) => {
+    const newChartId = duplicateChart(chart);
+    setDuplicateToast('Chart duplicated successfully');
+
+    // Clear toast after 3 seconds
+    setTimeout(() => {
+      setDuplicateToast(null);
+    }, 3000);
+
+    // Scroll to the new chart after a short delay to allow render
+    setTimeout(() => {
+      const newChartElement = document.querySelector(`[data-chart-id="${newChartId}"]`);
+      if (newChartElement) {
+        newChartElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   // Reset date range
@@ -197,50 +236,125 @@ export default function Home() {
 
         {/* Main Content - Filters and Chart side by side */}
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6 mb-6 md:mb-8">
-          {/* Filters Panel */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl lg:w-[560px] flex-shrink-0 self-center">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-              {/* State Filter */}
-              <StateFilter
-                states={STATES}
-                selectedStates={selectedStates}
+          {/* Filters Panel - appears second on mobile, first on desktop */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl lg:w-[560px] flex-shrink-0 self-center order-2 lg:order-1">
+            {isMobile ? (
+              <MobileFilterAccordion
+                sections={[
+                  {
+                    id: 'states',
+                    title: 'States',
+                    dimension: 'states',
+                    content: (
+                      <StateFilter
+                        states={STATES}
+                        selectedStates={selectedStates}
+                        multiSelectDimension={multiSelectDimension}
+                        stateSearch={stateSearch}
+                        onStateSearchChange={setStateSearch}
+                        onToggleState={(state) => toggle('states', state)}
+                        onReset={() => reset('states')}
+                        hideHeader
+                      />
+                    )
+                  },
+                  {
+                    id: 'categories',
+                    title: 'Categories',
+                    dimension: 'categories',
+                    content: (
+                      <CategoryFilter
+                        selectedCategories={selectedCategories}
+                        multiSelectDimension={multiSelectDimension}
+                        onToggleCategory={(category) => toggle('categories', category)}
+                        onReset={() => reset('categories')}
+                        hideHeader
+                      />
+                    )
+                  },
+                  {
+                    id: 'sectors',
+                    title: 'Sectors',
+                    dimension: 'sectors',
+                    content: (
+                      <SectorFilter
+                        selectedSectors={selectedSectors}
+                        multiSelectDimension={multiSelectDimension}
+                        onToggleSector={(sector) => toggle('sectors', sector)}
+                        onReset={() => reset('sectors')}
+                        hideHeader
+                      />
+                    )
+                  },
+                  {
+                    id: 'dateRange',
+                    title: 'Date Range',
+                    dimension: 'dateRange',
+                    content: (
+                      <DateRangeFilter
+                        startMonth={startMonth}
+                        startYear={startYear}
+                        endMonth={endMonth}
+                        endYear={endYear}
+                        availableYears={availableYears}
+                        onStartMonthChange={setStartMonth}
+                        onStartYearChange={setStartYear}
+                        onEndMonthChange={setEndMonth}
+                        onEndYearChange={setEndYear}
+                        onReset={handleResetDateRange}
+                        hideHeader
+                      />
+                    )
+                  },
+                ]}
+                expandedId={expandedId}
+                onToggle={toggleAccordion}
                 multiSelectDimension={multiSelectDimension}
-                stateSearch={stateSearch}
-                onStateSearchChange={setStateSearch}
-                onToggleState={(state) => toggle('states', state)}
-                onReset={() => reset('states')}
               />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                {/* State Filter */}
+                <StateFilter
+                  states={STATES}
+                  selectedStates={selectedStates}
+                  multiSelectDimension={multiSelectDimension}
+                  stateSearch={stateSearch}
+                  onStateSearchChange={setStateSearch}
+                  onToggleState={(state) => toggle('states', state)}
+                  onReset={() => reset('states')}
+                />
 
-              {/* Category Filter */}
-              <CategoryFilter
-                selectedCategories={selectedCategories}
-                multiSelectDimension={multiSelectDimension}
-                onToggleCategory={(category) => toggle('categories', category)}
-                onReset={() => reset('categories')}
-              />
+                {/* Category Filter */}
+                <CategoryFilter
+                  selectedCategories={selectedCategories}
+                  multiSelectDimension={multiSelectDimension}
+                  onToggleCategory={(category) => toggle('categories', category)}
+                  onReset={() => reset('categories')}
+                />
 
-              {/* Sector Filter */}
-              <SectorFilter
-                selectedSectors={selectedSectors}
-                multiSelectDimension={multiSelectDimension}
-                onToggleSector={(sector) => toggle('sectors', sector)}
-                onReset={() => reset('sectors')}
-              />
+                {/* Sector Filter */}
+                <SectorFilter
+                  selectedSectors={selectedSectors}
+                  multiSelectDimension={multiSelectDimension}
+                  onToggleSector={(sector) => toggle('sectors', sector)}
+                  onReset={() => reset('sectors')}
+                />
 
-              {/* Date Range Filter */}
-              <DateRangeFilter
-                startMonth={startMonth}
-                startYear={startYear}
-                endMonth={endMonth}
-                endYear={endYear}
-                availableYears={availableYears}
-                onStartMonthChange={setStartMonth}
-                onStartYearChange={setStartYear}
-                onEndMonthChange={setEndMonth}
-                onEndYearChange={setEndYear}
-                onReset={handleResetDateRange}
-              />
-            </div>
+                {/* Date Range Filter */}
+                <DateRangeFilter
+                  startMonth={startMonth}
+                  startYear={startYear}
+                  endMonth={endMonth}
+                  endYear={endYear}
+                  availableYears={availableYears}
+                  onStartMonthChange={setStartMonth}
+                  onStartYearChange={setStartYear}
+                  onEndMonthChange={setEndMonth}
+                  onEndYearChange={setEndYear}
+                  onReset={handleResetDateRange}
+                />
+              </div>
+            )}
 
             {/* Reset All Filters Button */}
             <div className="mt-4 pt-4 border-t border-slate-700/50">
@@ -256,22 +370,24 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Live Preview Chart */}
-          <LivePreviewChart
-            chartData={chartData}
-            hasNoData={hasNoData}
-            housingWarning={housingWarning}
-            isMobile={isMobile}
-            selections={selections}
-            multiSelectDimension={multiSelectDimension}
-            allStates={STATES}
-            dateRange={dateRange}
-            editingChartId={editingChartId}
-            chartPreviewRef={chartPreviewRef}
-            onAddChart={handleAddChart}
-            onSaveChanges={handleSaveChanges}
-            onCancelEditing={handleCancelEditing}
-          />
+          {/* Live Preview Chart - appears first on mobile, second on desktop */}
+          <div className="order-1 lg:order-2 flex-1 min-w-0">
+            <LivePreviewChart
+              chartData={chartData}
+              hasNoData={hasNoData}
+              housingWarning={housingWarning}
+              isMobile={isMobile}
+              selections={selections}
+              multiSelectDimension={multiSelectDimension}
+              allStates={STATES}
+              dateRange={dateRange}
+              editingChartId={editingChartId}
+              chartPreviewRef={chartPreviewRef}
+              onAddChart={handleAddChart}
+              onSaveChanges={handleSaveChanges}
+              onCancelEditing={handleCancelEditing}
+            />
+          </div>
         </div>
 
         {/* Chart Board */}
@@ -281,8 +397,8 @@ export default function Home() {
           allStates={STATES}
           editingChartId={editingChartId}
           onEditChart={handleEditChart}
-          onDuplicateChart={duplicateChart}
-          onRemoveChart={handleRemoveChart}
+          onDuplicateChart={handleDuplicateChart}
+          onRemoveChart={handleRequestRemoveChart}
         />
 
         {/* CPI Educational Information Section */}
@@ -296,6 +412,28 @@ export default function Home() {
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} />
+
+      {/* Duplicate Toast */}
+      {duplicateToast && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-lg flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          {duplicateToast}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={chartToDelete !== null}
+        title="Delete Chart"
+        message="Are you sure you want to delete this chart? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmRemoveChart}
+        onCancel={handleCancelRemoveChart}
+        variant="danger"
+      />
     </main>
   );
 }

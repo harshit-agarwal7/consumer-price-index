@@ -9,33 +9,37 @@ interface SectorFilterProps {
   multiSelectDimension: MultiSelectDimension;
   onToggleSector: (sector: string) => void;
   onReset: () => void;
+  hideHeader?: boolean;
 }
 
 export const SectorFilter = ({
   selectedSectors,
   multiSelectDimension,
   onToggleSector,
-  onReset
+  onReset,
+  hideHeader = false
 }: SectorFilterProps) => {
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 mb-2">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-          {getSectionHeader('sectors').title}
-        </h2>
-        {multiSelectDimension === 'sectors' && (
-          <span className="text-xs font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
-            Comparing
-          </span>
-        )}
-        <button
-          onClick={onReset}
-          className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-          title="Reset to default"
-        >
-          Reset
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            {getSectionHeader('sectors').title}
+          </h2>
+          {multiSelectDimension === 'sectors' && (
+            <span className="text-xs font-medium bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full">
+              Comparing
+            </span>
+          )}
+          <button
+            onClick={onReset}
+            className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            title="Reset to default"
+          >
+            Reset
+          </button>
+        </div>
+      )}
       <div className="space-y-2">
         {SECTORS.map((sector) => {
           const isSelected = selectedSectors.includes(sector);

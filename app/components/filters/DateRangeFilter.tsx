@@ -14,6 +14,7 @@ interface DateRangeFilterProps {
   onEndMonthChange: (month: string) => void;
   onEndYearChange: (year: string) => void;
   onReset: () => void;
+  hideHeader?: boolean;
 }
 
 export const DateRangeFilter = ({
@@ -26,22 +27,25 @@ export const DateRangeFilter = ({
   onStartYearChange,
   onEndMonthChange,
   onEndYearChange,
-  onReset
+  onReset,
+  hideHeader = false
 }: DateRangeFilterProps) => {
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-          Date Range
-        </h2>
-        <button
-          onClick={onReset}
-          className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-          title="Reset to full range"
-        >
-          Reset
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            Date Range
+          </h2>
+          <button
+            onClick={onReset}
+            className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            title="Reset to full range"
+          >
+            Reset
+          </button>
+        </div>
+      )}
       <div className="space-y-3">
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wide">

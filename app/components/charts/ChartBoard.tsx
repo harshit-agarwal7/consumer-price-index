@@ -79,6 +79,7 @@ export const ChartBoard = ({
             return (
               <div
                 key={chart.id}
+                data-chart-id={chart.id}
                 className={`bg-slate-900/50 rounded-xl border p-4 ${
                   editingChartId === chart.id
                     ? 'border-blue-500/50 ring-2 ring-blue-500/20'
@@ -122,14 +123,14 @@ export const ChartBoard = ({
                 </div>
 
                 {chartResult.hasNoData || chartHousingWarning ? (
-                  <div className="flex items-center justify-center h-48 bg-slate-800/30 rounded-lg">
+                  <div className="flex items-center justify-center aspect-[16/9] bg-slate-800/30 rounded-lg">
                     <p className={`text-sm text-center px-4 ${chartHousingWarning ? 'text-amber-400' : 'text-slate-500'}`}>
                       {chartHousingWarning || 'No data available'}
                     </p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartResult.chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <ResponsiveContainer width="100%" aspect={1.1}>
+                    <LineChart data={chartResult.chartData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis
                         dataKey="date"

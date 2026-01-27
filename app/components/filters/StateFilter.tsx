@@ -13,6 +13,7 @@ interface StateFilterProps {
   onStateSearchChange: (search: string) => void;
   onToggleState: (state: string) => void;
   onReset: () => void;
+  hideHeader?: boolean;
 }
 
 export const StateFilter = ({
@@ -22,7 +23,8 @@ export const StateFilter = ({
   stateSearch,
   onStateSearchChange,
   onToggleState,
-  onReset
+  onReset,
+  hideHeader = false
 }: StateFilterProps) => {
   const stateDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -32,35 +34,37 @@ export const StateFilter = ({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 mb-2">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-          {getSectionHeader('states').title}
-        </h2>
-        {multiSelectDimension === 'states' && (
-          <span className="text-xs font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
-            Comparing
-          </span>
-        )}
-        <button
-          onClick={onReset}
-          className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-          title="Reset to default"
-        >
-          Reset
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            {getSectionHeader('states').title}
+          </h2>
+          {multiSelectDimension === 'states' && (
+            <span className="text-xs font-medium bg-cyan-600/30 text-cyan-300 px-2 py-0.5 rounded-full">
+              Comparing
+            </span>
+          )}
+          <button
+            onClick={onReset}
+            className="ml-auto text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            title="Reset to default"
+          >
+            Reset
+          </button>
+        </div>
+      )}
 
-      <div ref={stateDropdownRef}>
+      <div ref={stateDropdownRef} className="p-0.5 -m-0.5">
         <input
           type="text"
           value={stateSearch}
           onChange={(e) => onStateSearchChange(e.target.value)}
           placeholder="Search states..."
-          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm mb-2"
+          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-sm mb-2"
         />
       </div>
 
-      <div className="space-y-1.5 max-h-[248px] overflow-y-auto pr-1 scrollbar-thin">
+      <div className="space-y-1.5 max-h-[248px] min-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
         {filteredStates
           .sort((a, b) => {
             if (a === 'ALL India') return -1;

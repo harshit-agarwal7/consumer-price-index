@@ -8,7 +8,7 @@ interface UseChartBoardReturn {
   addChart: (chart: ChartDefinition) => void;
   updateChart: (chartId: string, updates: Partial<ChartDefinition>) => void;
   removeChart: (chartId: string) => void;
-  duplicateChart: (chart: ChartDefinition) => void;
+  duplicateChart: (chart: ChartDefinition) => string;
 }
 
 export const useChartBoard = (): UseChartBoardReturn => {
@@ -53,13 +53,15 @@ export const useChartBoard = (): UseChartBoardReturn => {
     setChartBoard(prev => prev.filter(c => c.id !== chartId));
   };
 
-  const duplicateChart = (chart: ChartDefinition) => {
+  const duplicateChart = (chart: ChartDefinition): string => {
+    const newId = Date.now().toString();
     const newChart: ChartDefinition = {
       ...chart,
-      id: Date.now().toString(),
+      id: newId,
       title: chart.title + ' (Copy)'
     };
     setChartBoard(prev => [...prev, newChart]);
+    return newId;
   };
 
   return { chartBoard, addChart, updateChart, removeChart, duplicateChart };
