@@ -148,7 +148,7 @@ export const ChartBoard = ({
                       />
                       <Tooltip content={<CustomTooltip small />} />
                       <Legend
-                        wrapperStyle={{ paddingTop: '10px' }}
+                        wrapperStyle={{ paddingTop: '10px', left: '0px' }}
                         formatter={(value) => <span className="text-slate-300 text-sm">{value}</span>}
                       />
                       {renderChartLines({
