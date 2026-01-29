@@ -65,7 +65,7 @@ export const ChartBoard = ({
               </svg>
             </div>
             <p className="text-slate-400 text-sm md:text-base mb-2">
-              Build a chart using the filters above and click &apos;Add Chart&apos; to compare multiple views.
+              Build a chart using the filters above and click &apos;Add to Board&apos; to compare multiple views.
             </p>
             <p className="text-slate-500 text-sm">
               Charts will be saved and persist across page reloads.
