@@ -1,7 +1,7 @@
 'use client';
 
 import { AVAILABLE_MONTHS } from '../../constants';
-import { isEndMonthDisabled, isEndYearDisabled } from '../../utils';
+import { isEndMonthDisabled, isEndYearDisabled, isStartMonthDisabled, isStartYearDisabled } from '../../utils';
 
 interface DateRangeFilterProps {
   startMonth: string;
@@ -68,7 +68,11 @@ export const DateRangeFilter = ({
                 className="absolute inset-0 opacity-0 cursor-pointer w-full"
               >
                 {AVAILABLE_MONTHS.map(month => (
-                  <option key={month} value={month}>
+                  <option
+                    key={month}
+                    value={month}
+                    disabled={isStartMonthDisabled(month, startYear, endYear, endMonth)}
+                  >
                     {month.slice(0, 3)}
                   </option>
                 ))}
@@ -93,7 +97,11 @@ export const DateRangeFilter = ({
                 className="absolute inset-0 opacity-0 cursor-pointer w-full"
               >
                 {availableYears.map(year => (
-                  <option key={year} value={year}>
+                  <option
+                    key={year}
+                    value={year}
+                    disabled={isStartYearDisabled(year, endYear)}
+                  >
                     {year}
                   </option>
                 ))}

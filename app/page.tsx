@@ -97,6 +97,15 @@ export default function Home() {
     }
   }, [endYear, startYear, startMonth, endMonth]);
 
+  // Validate start month when start year changes
+  useEffect(() => {
+    if (startYear && endYear && startMonth && endMonth) {
+      if (startYear === endYear && compareDates(startYear, startMonth, endYear, endMonth) > 0) {
+        setStartMonth(endMonth);
+      }
+    }
+  }, [startYear, endYear, startMonth, endMonth]);
+
   // Transform data for live preview chart
   useEffect(() => {
     const result = generateChartData(cpiData, selections, dateRange);

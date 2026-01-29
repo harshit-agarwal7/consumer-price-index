@@ -37,3 +37,21 @@ export const isEndYearDisabled = (year: string, startYear: string): boolean => {
   if (!startYear) return false;
   return year < startYear;
 };
+
+export const isStartMonthDisabled = (
+  month: string,
+  startYear: string,
+  endYear: string,
+  endMonth: string
+): boolean => {
+  if (!startYear || !endYear || !endMonth) return false;
+  if (startYear === endYear) {
+    return compareDates(startYear, month, endYear, endMonth) > 0;
+  }
+  return false;
+};
+
+export const isStartYearDisabled = (year: string, endYear: string): boolean => {
+  if (!endYear) return false;
+  return year > endYear;
+};
