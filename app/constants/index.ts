@@ -15,7 +15,7 @@ export const CATEGORY_COLORS = {
 };
 
 export const STATE_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6',
   '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
   '#a855f7', '#f43f5e', '#22c55e', '#0ea5e9', '#eab308',
   '#d946ef', '#6366f1', '#059669', '#dc2626', '#7c3aed',

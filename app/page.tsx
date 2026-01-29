@@ -391,6 +391,7 @@ export default function Home() {
               dateRange={dateRange}
               editingChartId={editingChartId}
               chartPreviewRef={chartPreviewRef}
+              isMobile={isMobile}
               onAddChart={handleAddChart}
               onSaveChanges={handleSaveChanges}
               onCancelEditing={handleCancelEditing}

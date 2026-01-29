@@ -17,6 +17,7 @@ interface LivePreviewChartProps {
   dateRange: DateRange;
   editingChartId: string | null;
   chartPreviewRef: RefObject<HTMLDivElement | null>;
+  isMobile: boolean;
   onAddChart: () => void;
   onSaveChanges: () => void;
   onCancelEditing: () => void;
@@ -32,15 +33,20 @@ export const LivePreviewChart = ({
   dateRange,
   editingChartId,
   chartPreviewRef,
+  isMobile,
   onAddChart,
   onSaveChanges,
   onCancelEditing
 }: LivePreviewChartProps) => {
-  // Calculate aspect ratio based on actual container dimensions
+  // Calculate aspect ratio based on actual container dimensions (desktop only)
+  // On mobile, use a fixed aspect ratio for stability
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [aspectRatio, setAspectRatio] = useState(1.7);
+  const [desktopAspectRatio, setDesktopAspectRatio] = useState(1.7);
 
   useEffect(() => {
+    // Skip dynamic calculation on mobile
+    if (isMobile) return;
+
     const container = chartContainerRef.current;
     if (!container) return;
 
@@ -59,14 +65,17 @@ export const LivePreviewChart = ({
 
       // Clamp between bounds
       const clampedAspect = Math.max(minAspect, Math.min(maxAspect, naturalAspect));
-      setAspectRatio(clampedAspect);
+      setDesktopAspectRatio(clampedAspect);
     };
 
     const resizeObserver = new ResizeObserver(calculateAspectRatio);
     resizeObserver.observe(container);
 
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [isMobile]);
+
+  // Use fixed aspect ratio on mobile for stability, dynamic on desktop
+  const aspectRatio = isMobile ? 1.3 : desktopAspectRatio;
 
   return (
     <div ref={chartPreviewRef} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl flex-1 min-w-0 flex flex-col">
