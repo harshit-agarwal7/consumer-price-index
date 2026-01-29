@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Consumer Price Index - India
+
+An interactive web application for visualizing and exploring Consumer Price Index (CPI) data across India. Compare inflation trends across states, categories, and sectors with intuitive charts and filters.
+
+**Live Demo:** https://consumer-price-index-green.vercel.app/
+
+## Screenshots
+
+![Dashboard Overview](./docs/screenshots/dashboard.png)
+![Chart Comparison](./docs/screenshots/charts.png)
+
+
+## Motivation
+
+This project started out of a simple frustration — I couldn't find a single place where I could easily see how consumer prices have changed over time, whether across different years, states, categories, or sectors. The information existed, but it felt scattered, hard to explore, and not very intuitive.
+
+Along the way, I also realized that my own understanding of CPI was pretty surface-level. So this project became a way for me to learn as well — to break down what CPI actually means, why it's tracked, and why it matters in everyday life.
+
+What began as a small personal project slowly grew into an attempt to make price data easier to explore, easier to understand, and a little less intimidating for anyone curious about inflation and cost-of-living trends.
+
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/) 16 with App Router
+- **UI Library:** [React](https://react.dev/) 19
+- **Charts:** [Recharts](https://recharts.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) 4
+- **Language:** [TypeScript](https://www.typescriptlang.org/) 5
+- **CSV Parsing:** [PapaParse](https://www.papaparse.com/)
+- **Testing:** [Jest](https://jestjs.io/)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/harshit-agarwal7/consumer-price-index.git
+   cd consumer-price-index
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Running Tests
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Data Source
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+CPI data is sourced from the [Ministry of Statistics and Programme Implementation (MOSPI)](https://cpi.mospi.gov.in/TimeSeries_2012.aspx), Government of India. The dataset includes monthly CPI values from January 2013 to November 2025.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+app/
+├── components/
+│   ├── charts/          # Chart components (ChartBoard, LivePreviewChart)
+│   └── filters/         # Filter components (State, Category, Sector, DateRange)
+├── hooks/               # Custom React hooks (useCPIData, useChartBoard, useMultiSelect)
+├── utils/               # Helper functions (chart, date, display utilities)
+├── constants/           # Colors, categories, states configuration
+├── types/               # TypeScript type definitions
+└── page.tsx             # Main application page
 
-To learn more about Next.js, take a look at the following resources:
+public/
+└── CPIndex_Jan13-To-Nov25.csv   # CPI dataset
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+[Add your license here]
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
