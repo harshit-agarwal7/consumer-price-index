@@ -22,11 +22,11 @@ What began as a small personal project slowly grew into an attempt to make price
 
 ## Tech Stack
 
-- **Framework:** [Next.js](https://nextjs.org/) 16 with App Router
-- **UI Library:** [React](https://react.dev/) 19
+- **Framework:** [Next.js](https://nextjs.org/) with App Router
+- **UI Library:** [React](https://react.dev/)
 - **Charts:** [Recharts](https://recharts.org/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) 4
-- **Language:** [TypeScript](https://www.typescriptlang.org/) 5
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
 - **CSV Parsing:** [PapaParse](https://www.papaparse.com/)
 - **Testing:** [Jest](https://jestjs.io/)
 
