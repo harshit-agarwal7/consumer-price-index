@@ -71,8 +71,9 @@ export default function Home() {
   const { expandedId, toggle: toggleAccordion } = useAccordion(null);
 
   // Handle window resize for responsive chart height
+  // Use 640px (sm breakpoint) so filters show directly in 2-column grid without accordion
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -336,7 +337,7 @@ export default function Home() {
                 multiSelectDimension={multiSelectDimension}
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                 {/* State Filter */}
                 <StateFilter
                   states={STATES}
