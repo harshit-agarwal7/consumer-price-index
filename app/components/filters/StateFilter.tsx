@@ -96,13 +96,15 @@ export const StateFilter = ({
                     </svg>
                   )}
                 </div>
-                <span className="text-sm text-slate-300 leading-tight truncate">{getStateDisplayName(state)}</span>
-                {multiSelectDimension === 'states' && (
-                  <span
-                    className={`w-3 h-3 rounded-full flex-shrink-0 ml-auto ${isSelected ? '' : 'opacity-30'}`}
-                    style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
-                  ></span>
-                )}
+                <span className="text-sm text-slate-300 leading-tight truncate flex-1 min-w-0">{getStateDisplayName(state)}</span>
+                <span
+                  className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                    multiSelectDimension === 'states'
+                      ? (isSelected ? '' : 'opacity-30')
+                      : 'opacity-0'
+                  }`}
+                  style={{ backgroundColor: STATE_COLORS[stateIndex % STATE_COLORS.length] }}
+                ></span>
               </div>
             );
           })}
