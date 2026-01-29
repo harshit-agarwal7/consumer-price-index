@@ -1,6 +1,6 @@
 'use client';
 
-import { RefObject } from 'react';
+import { RefObject, useState, useEffect, useRef } from 'react';
 import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DateRange, MultiSelectDimension, Selections } from '../../types';
 import { CustomTooltip } from '../CustomTooltip';
@@ -11,7 +11,6 @@ interface LivePreviewChartProps {
   chartData: any[];
   hasNoData: boolean;
   housingWarning: string | null;
-  isMobile: boolean;
   selections: Selections;
   multiSelectDimension: MultiSelectDimension;
   allStates: string[];
@@ -27,7 +26,6 @@ export const LivePreviewChart = ({
   chartData,
   hasNoData,
   housingWarning,
-  isMobile,
   selections,
   multiSelectDimension,
   allStates,
@@ -38,6 +36,38 @@ export const LivePreviewChart = ({
   onSaveChanges,
   onCancelEditing
 }: LivePreviewChartProps) => {
+  // Calculate aspect ratio based on actual container dimensions
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [aspectRatio, setAspectRatio] = useState(1.7);
+
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    const calculateAspectRatio = () => {
+      const { width, height } = container.getBoundingClientRect();
+      // Reserve space for the caption below the chart (~30px)
+      const availableHeight = height - 30;
+
+      if (width <= 0 || availableHeight <= 0) return;
+
+      const minAspect = 1.1;
+      const maxAspect = 1.7;
+
+      // Calculate natural aspect ratio from available space
+      const naturalAspect = width / availableHeight;
+
+      // Clamp between bounds
+      const clampedAspect = Math.max(minAspect, Math.min(maxAspect, naturalAspect));
+      setAspectRatio(clampedAspect);
+    };
+
+    const resizeObserver = new ResizeObserver(calculateAspectRatio);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   return (
     <div ref={chartPreviewRef} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl flex-1 min-w-0 flex flex-col">
       <div className="flex items-center justify-between mb-4 md:mb-6 gap-2">
@@ -79,7 +109,7 @@ export const LivePreviewChart = ({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center">
+      <div ref={chartContainerRef} className="flex-1 flex flex-col justify-center">
         {hasNoData || housingWarning ? (
           <div className="flex items-center justify-center aspect-[16/10] max-w-4xl mx-auto w-full">
             <div className="text-center px-4 max-w-md">
@@ -101,7 +131,7 @@ export const LivePreviewChart = ({
           </div>
         ) : (
           <div className="max-w-4xl mx-auto w-full">
-            <ResponsiveContainer width="100%" aspect={isMobile ? 1.1 : 1.7}>
+            <ResponsiveContainer width="100%" aspect={aspectRatio}>
               <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis

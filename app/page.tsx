@@ -376,7 +376,6 @@ export default function Home() {
               chartData={chartData}
               hasNoData={hasNoData}
               housingWarning={housingWarning}
-              isMobile={isMobile}
               selections={selections}
               multiSelectDimension={multiSelectDimension}
               allStates={STATES}
