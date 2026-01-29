@@ -141,7 +141,7 @@ export const LivePreviewChart = ({
         ) : (
           <div className="max-w-4xl mx-auto w-full">
             <ResponsiveContainer width="100%" aspect={aspectRatio}>
-              <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+              <LineChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis
                   dataKey="date"
@@ -157,7 +157,7 @@ export const LivePreviewChart = ({
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend
-                  wrapperStyle={{ paddingTop: isMobile ? '10px' : '20px' }}
+                  wrapperStyle={{ paddingTop: isMobile ? '10px' : '20px', left: '0px' }}
                   formatter={(value) => <span className="text-slate-300 text-sm md:text-sm">{value}</span>}
                 />
                 {renderChartLines({
