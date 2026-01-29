@@ -415,7 +415,7 @@ export default function Home() {
         <CPIEducation />
 
         {/* Footer */}
-        <footer className="mt-10 md:mt-16">
+        <footer className="mt-8 md:mt-12">
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 md:p-8 shadow-xl">
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Story Section - Left */}
