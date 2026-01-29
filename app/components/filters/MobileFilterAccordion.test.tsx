@@ -35,6 +35,14 @@ describe('MobileFilterAccordion', () => {
   });
 
   describe('rendering', () => {
+    it('should render helper message for mobile users', () => {
+      render(<MobileFilterAccordion {...defaultProps} />);
+
+      expect(
+        screen.getByText(/Tap on a dimension below to see options and view the Consumer Price Index along that dimension/i)
+      ).toBeInTheDocument();
+    });
+
     it('should render all section titles', () => {
       render(<MobileFilterAccordion {...defaultProps} />);
 

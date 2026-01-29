@@ -31,6 +31,10 @@ export const MobileFilterAccordion = ({
 }: MobileFilterAccordionProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+      {/* Helper message for mobile users - spans full width */}
+      <p className="col-span-1 sm:col-span-2 text-xs text-slate-400 pb-3 border-b border-slate-700/50">
+        Tap on a dimension below to see options and view the Consumer Price Index along that dimension.
+      </p>
       {sections.map((section, index) => {
         const isExpanded = expandedId === section.id;
         const isComparing = multiSelectDimension === section.dimension;
