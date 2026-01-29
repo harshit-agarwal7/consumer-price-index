@@ -2,13 +2,15 @@
 
 An interactive web application for visualizing and exploring Consumer Price Index (CPI) data across India. Compare inflation trends across states, categories, and sectors with intuitive charts and filters.
 
-**Live Demo:** https://consumer-price-index-green.vercel.app/
+**Live App:** https://consumer-price-index-green.vercel.app/
 
 ## Screenshots
 
 ![Dashboard Overview](./docs/screenshots/dashboard.png)
-![Chart Comparison](./docs/screenshots/charts.png)
+*Figure 1: Consumer Price Index graph comparing All India and Jammu & Kashmir between 2013 and 2025.*
 
+![Chart Comparison](./docs/screenshots/charts.png)
+*Figure 2: You can add multiple charts to the chart board for comparision or later review.*
 
 ## Motivation
 
@@ -84,5 +86,4 @@ public/
 
 ## License
 
-[Add your license here]
-
+This project is licensed under the MIT License.
