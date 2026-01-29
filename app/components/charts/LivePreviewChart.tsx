@@ -75,7 +75,7 @@ export const LivePreviewChart = ({
   }, [isMobile]);
 
   // Use fixed aspect ratio on mobile for stability, dynamic on desktop
-  const aspectRatio = isMobile ? 1.3 : desktopAspectRatio;
+  const aspectRatio = isMobile ? 1.1 : desktopAspectRatio;
 
   return (
     <div ref={chartPreviewRef} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 md:p-5 shadow-xl flex-1 min-w-0 flex flex-col">
@@ -141,7 +141,7 @@ export const LivePreviewChart = ({
         ) : (
           <div className="max-w-4xl mx-auto w-full">
             <ResponsiveContainer width="100%" aspect={aspectRatio}>
-              <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+              <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis
                   dataKey="date"
@@ -157,7 +157,7 @@ export const LivePreviewChart = ({
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend
-                  wrapperStyle={{ paddingTop: '20px' }}
+                  wrapperStyle={{ paddingTop: isMobile ? '10px' : '20px' }}
                   formatter={(value) => <span className="text-slate-300 text-sm md:text-sm">{value}</span>}
                 />
                 {renderChartLines({
@@ -167,7 +167,7 @@ export const LivePreviewChart = ({
                 })}
               </LineChart>
             </ResponsiveContainer>
-            <p className="text-sm text-slate-400 text-center mt-2">
+            <p className="text-sm text-slate-400 text-center">
               {generateChartTitle(selections, multiSelectDimension, dateRange)}
             </p>
           </div>

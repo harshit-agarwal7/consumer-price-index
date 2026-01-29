@@ -238,7 +238,7 @@ export default function Home() {
       <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="mb-6 md:mb-8 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-[24px] md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Consumer Price Index - India
           </h1>
         </div>
@@ -479,7 +479,7 @@ export default function Home() {
                       <p className="text-xs text-slate-500 font-medium">Github</p>
                       <p className="text-slate-300 group-hover:text-white font-medium transition-colors">View Repo</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-500 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-slate-500 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </a>
@@ -500,7 +500,7 @@ export default function Home() {
                       <p className="text-xs text-slate-500 font-medium">Created by</p>
                       <p className="text-slate-300 group-hover:text-white font-medium transition-colors">Harshit Agarwal</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-500 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-slate-500 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </a>
