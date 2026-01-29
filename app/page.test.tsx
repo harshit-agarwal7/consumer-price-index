@@ -46,7 +46,7 @@ Object.defineProperty(window, 'innerWidth', {
 
 // Mock localStorage
 const localStorageMock = {
-  getItem: jest.fn(() => null),
+  getItem: jest.fn(() => null) as jest.Mock<string | null>,
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
@@ -497,6 +497,78 @@ describe('Dimension Switching - Keep Last Selected', () => {
       const generalLabel = generalElements.find(el => el.closest('label'))?.closest('label');
       const generalIndexCheckbox = generalLabel?.querySelector('input[type="checkbox"]');
       expect(generalIndexCheckbox).not.toBeChecked();
+    });
+  });
+});
+
+describe('Add to Board Functionality', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Mock scrollIntoView
+    Element.prototype.scrollIntoView = jest.fn();
+  });
+
+  it('has cursor-pointer class on Add to Board button', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      const addButton = screen.getByText('Add to Board').closest('button');
+      expect(addButton).toHaveClass('cursor-pointer');
+    });
+  });
+
+  it('shows toast and scrolls when chart is added', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add to Board')).toBeInTheDocument();
+    });
+
+    // Click Add to Board button
+    const addButton = screen.getByText('Add to Board').closest('button');
+    expect(addButton).toBeTruthy();
+    fireEvent.click(addButton!);
+
+    await waitFor(() => {
+      // Toast should appear
+      expect(screen.getByText('Chart added to board')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('Chart Board Action Buttons', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Mock scrollIntoView
+    Element.prototype.scrollIntoView = jest.fn();
+  });
+
+  it('has cursor-pointer class on edit, duplicate, and remove buttons after adding a chart', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add to Board')).toBeInTheDocument();
+    });
+
+    // First add a chart
+    const addButton = screen.getByText('Add to Board').closest('button');
+    expect(addButton).toBeTruthy();
+    fireEvent.click(addButton!);
+
+    // Wait for chart to be added
+    await waitFor(() => {
+      expect(screen.getByText('Chart added to board')).toBeInTheDocument();
+    });
+
+    // Now check that action buttons have cursor-pointer class
+    await waitFor(() => {
+      const editButton = screen.getByTitle('Edit');
+      const duplicateButton = screen.getByTitle('Duplicate');
+      const removeButton = screen.getByTitle('Remove');
+
+      expect(editButton).toHaveClass('cursor-pointer');
+      expect(duplicateButton).toHaveClass('cursor-pointer');
+      expect(removeButton).toHaveClass('cursor-pointer');
     });
   });
 });

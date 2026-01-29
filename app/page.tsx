@@ -58,7 +58,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [editingChartId, setEditingChartId] = useState<string | null>(null);
   const [chartToDelete, setChartToDelete] = useState<string | null>(null);
-  const [duplicateToast, setDuplicateToast] = useState<string | null>(null);
+  const [actionToast, setActionToast] = useState<string | null>(null);
 
   // Chart data
   const [chartData, setChartData] = useState<any[]>([]);
@@ -116,10 +116,11 @@ export default function Home() {
   // Housing warning
   const housingWarning = getHousingDataWarning(selections);
 
-  // Add chart to board
+  // Add chart to board with notification and scroll
   const handleAddChart = () => {
+    const newChartId = Date.now().toString();
     const newChart: ChartDefinition = {
-      id: Date.now().toString(),
+      id: newChartId,
       title: generateChartTitle(selections, multiSelectDimension, dateRange),
       subtitle: generateChartSubtitle(selections),
       selections: {
@@ -131,6 +132,20 @@ export default function Home() {
       multiSelectDimension
     };
     addChart(newChart);
+    setActionToast('Chart added to board');
+
+    // Clear toast after 3 seconds
+    setTimeout(() => {
+      setActionToast(null);
+    }, 3000);
+
+    // Scroll to the new chart after a short delay to allow render
+    setTimeout(() => {
+      const newChartElement = document.querySelector(`[data-chart-id="${newChartId}"]`);
+      if (newChartElement) {
+        newChartElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   // Save changes to edited chart
@@ -199,11 +214,11 @@ export default function Home() {
   // Duplicate chart with notification and scroll
   const handleDuplicateChart = (chart: ChartDefinition) => {
     const newChartId = duplicateChart(chart);
-    setDuplicateToast('Chart duplicated successfully');
+    setActionToast('Chart duplicated successfully');
 
     // Clear toast after 3 seconds
     setTimeout(() => {
-      setDuplicateToast(null);
+      setActionToast(null);
     }, 3000);
 
     // Scroll to the new chart after a short delay to allow render
@@ -514,13 +529,13 @@ export default function Home() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} />
 
-      {/* Duplicate Toast */}
-      {duplicateToast && (
+      {/* Action Toast */}
+      {actionToast && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-lg flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          {duplicateToast}
+          {actionToast}
         </div>
       )}
 
