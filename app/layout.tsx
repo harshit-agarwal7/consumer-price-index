@@ -15,6 +15,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Consumer Price Index - India",
   description: "Visualization tool for the consumer price index in Inida.",
+  openGraph: {
+    title: "Consumer Price Index Visualizer",
+    description: "Explore CPI trends across India",
+    url: "https://consumer-price-index-green.vercel.app",
+    images: [
+      {
+        url: "https://consumer-price-index-green.vercel.app/docs/screenshots/og-image.jpg",
+        width: 1200,
+        height: 630,
+      },
+    ],
+},
 };
 
 export default function RootLayout({
